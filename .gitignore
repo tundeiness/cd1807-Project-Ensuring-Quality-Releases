@@ -23,3 +23,28 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform-backend-config.txt
+
+# Secrets and credentials
+.env
+*.pem
+*.key
+id_rsa*
+*.pub
+*access_key*
+*secret*
+
+# Azure
+.azure/
+
+# IDE
+.vscode/
+.idea/
+
