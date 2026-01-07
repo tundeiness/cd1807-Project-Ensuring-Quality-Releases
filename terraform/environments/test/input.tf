@@ -14,3 +14,18 @@ variable virtual_network_name {}
 variable address_prefix_test {}
 variable address_space {}
 
+# VM Inputs
+variable "vm_name" {
+  type = string
+}
+
+# Pipeline Variables
+
+variable admin_username {
+  # type = string
+}
+
+variable ssh_public_key {
+  type = string
+}
+
