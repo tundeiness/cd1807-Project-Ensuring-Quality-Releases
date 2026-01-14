@@ -29,7 +29,7 @@ override.tf.json
 *.tfvars
 .terraform/
 .terraform.lock.hcl
-./terraform/environments/test/terraform.tfvars
+terraform/environments/test/terraform.tfvars
 secrets.tfvars
 terraform-backend-config.txt
 
