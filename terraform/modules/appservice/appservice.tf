@@ -4,7 +4,7 @@ resource "random_id" "unique" {
 
 resource "azurerm_service_plan" "test" {
   name                = "${var.application_type}-${var.resource_type}-plan-${random_id.unique.hex}"
-  location            = var.location  # Use same location variable
+  location            = "South Central US"  # Use same location variable
   resource_group_name = var.resource_group
   os_type             = "Linux"
   sku_name            = "F1"

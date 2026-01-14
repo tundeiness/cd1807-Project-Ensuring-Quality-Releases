@@ -30,6 +30,7 @@ override.tf.json
 .terraform/
 .terraform.lock.hcl
 terraform.tfvars
+secrets.tfvars
 terraform-backend-config.txt
 
 # Secrets and credentials
