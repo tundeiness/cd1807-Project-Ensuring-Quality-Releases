@@ -16,8 +16,9 @@ variables:
   projectRoot: $(System.DefaultWorkingDirectory)
   environmentName: 'test'
 
-# Pull in your secret variables (client_id, client_secret, access_key)
-  group: azure-credentials
+  # 👇 this is the correct way to pull in a Variable Group
+  group:
+    azure-credentials
 
 
 stages:
