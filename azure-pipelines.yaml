@@ -67,26 +67,14 @@ stages:
         script: |
           terraform validate
 
-    # Debug: List files to verify terraform.tfvars exists
-    - task: Bash@3
-      displayName: 'Debug - List files'
-      inputs:
-        targetType: 'inline'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        script: |
-          echo "Files in current directory:"
-          ls -la
-          echo ""
-          echo "Content of terraform.tfvars (if exists):"
-          cat terraform.tfvars || echo "terraform.tfvars not found"
-
     - task: Bash@3
       displayName: 'Terraform plan - create infrastructure'
       inputs:
         targetType: 'inline'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
         script: |
-          terraform plan -input=false -out=tfplan
+          terraform plan -input=false -out=tfplan \
+            -var="ssh_public_key=$(SSH_PUBLIC_KEY)"
       env:
         ARM_CLIENT_ID: $(ARM_CLIENT_ID)
         ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
