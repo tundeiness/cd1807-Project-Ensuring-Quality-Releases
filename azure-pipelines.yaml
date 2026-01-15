@@ -11,14 +11,15 @@ trigger:
 pool: myAgentPool
 
 variables:
-  python.version: '3.8.10'
-  azureServiceConnectionId: 'myServiceConnection'
-  projectRoot: $(System.DefaultWorkingDirectory)
-  environmentName: 'test'
-
-  # 👇 this is the correct way to pull in a Variable Group
-  group:
-    azure-credentials
+- group: azure-credentials
+- name: python.version
+  value: '3.8.10'
+- name: azureServiceConnectionId
+  value: 'myServiceConnection'
+- name: projectRoot
+  value: $(System.DefaultWorkingDirectory)
+- name: environmentName
+  value: 'test'
 
 
 stages:
