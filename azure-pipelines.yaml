@@ -15,11 +15,12 @@ variables:
 - name: python.version
   value: '3.8.10'
 - name: azureServiceConnectionId
-  value: 'myServiceConnection'
+  value: 'myConnex'
 - name: projectRoot
   value: $(System.DefaultWorkingDirectory)
 - name: environmentName
   value: 'test'
+
 
 
 stages:
