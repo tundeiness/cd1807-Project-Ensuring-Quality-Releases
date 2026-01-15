@@ -60,12 +60,33 @@ stages:
           terraform init
 
     - task: Bash@3
+      displayName: 'Terraform validate'
+      inputs:
+        targetType: 'inline'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        script: |
+          terraform validate
+
+    - task: Bash@3
+      displayName: 'Terraform plan - create infrastructure'
+      inputs:
+        targetType: 'inline'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        script: |
+          terraform plan -out=tfplan
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+    - task: Bash@3
       displayName: 'Terraform apply - create infrastructure'
       inputs:
         targetType: 'inline'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
         script: |
-          terraform apply -auto-approve
+          terraform apply tfplan
       env:
         ARM_CLIENT_ID: $(ARM_CLIENT_ID)
         ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
@@ -82,9 +103,10 @@ stages:
           # Remove local backend override
           rm -f backend_override.tf
           
-          # Re-initialize with remote backend
+          # Re-initialize with remote backend and migrate state
           terraform init \
             -migrate-state \
+            -force-copy \
             -backend-config="storage_account_name=fstate2441011244" \
             -backend-config="container_name=tfstate" \
             -backend-config="key=test.terraform.tfstate" \
@@ -101,7 +123,6 @@ stages:
         knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
         sshPublicKey: '$(SSH_PUBLIC_KEY)'
         sshKeySecureFile: id_rsa.pub
-
 # #--------------------------------------------#  
 # # BUILD STAGE
 # #--------------------------------------------#    
