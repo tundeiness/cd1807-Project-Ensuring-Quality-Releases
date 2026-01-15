@@ -17,8 +17,7 @@ variables:
   environmentName: 'test'
 
 # Pull in your secret variables (client_id, client_secret, access_key)
-variables:
-- group: azure-credentials
+  group: azure-credentials
 
 
 stages:
