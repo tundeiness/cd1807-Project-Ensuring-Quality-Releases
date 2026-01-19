@@ -26,181 +26,83 @@ variables:
 
 stages:
 
+#--------------------------------------------#  
+# BUILD STAGE
+#--------------------------------------------#    
 - stage: Build
   jobs:
   - job: BuildInfrastructure
     steps:
-    #--------------------------------------------#  
+
+
+   #--------------------------------------------#  
     # retrieve private key
     - task: DownloadSecureFile@1
       name: ssh_private_key
       inputs:
         secureFile: id_rsa.pub
-    
     #--------------------------------------------#  
+    # Use Terraform to create the Infrastructure      
     # Install Terraform on the pipeline agent 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-      displayName: 'Terraform installation'
+      displayName: 'Terrafom installation'
       inputs:
         terraformVersion: '1.2.9'
     
-    # STEP 1: Initialize with local backend to create infrastructure including storage account
-    - task: Bash@3
-      displayName: 'Terraform init with local backend'
+    # Run Terraform Init on the pipeline agent 
+    # ToDo: Replace the resource group name, storage account name, and container name below
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+      displayName: 'Terrafom init'
       inputs:
-        targetType: 'inline'
+        provider: 'azurerm'
+        command: 'init'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        script: |
-          # Temporarily use local backend
-          cat > backend_override.tf <<EOF
-          terraform {
-            backend "local" {}
-          }
-          EOF
-          terraform init
+        backendServiceArm: '$(azureServiceConnectionId)'
+        backendAzureRmResourceGroupName: 'Azuredevops'
+        backendAzureRmStorageAccountName: 'fstate2441011244'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'test.terraform.tfstate'
 
-    - task: Bash@3
-      displayName: 'Terraform validate'
+
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+      displayName: Terraform validate
       inputs:
-        targetType: 'inline'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        script: |
-          terraform validate
+        provider: 'azurerm'
+        command: 'validate'
 
-    - task: Bash@3
-      displayName: 'Terraform plan - create infrastructure'
-      inputs:
-        targetType: 'inline'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        script: |
-          terraform plan -input=false -out=tfplan \
-            -var="ssh_public_key=$(SSH_PUBLIC_KEY)"
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
+    # OPTIONAL - This step is needed only if your Terraform VM uses an SSH key pair for login and you want your pipeline agent to connect to it. 
+    # Generate an SSH key pair in your local/AZ Cloud shell. Use the public key in the Terraform VM module. 
+    # Install public key and private key file to the pipeline agent, using the task below. 
+    # ToDo: Change the inputs value below
+    # - task: InstallSSHKey@0
+    #   inputs:
+    #     knownHostsEntry: 'KNOWN_HOSTS_STRING' # variable value
+    #     sshPublicKey: 'PUBLIC_KEY'            # variable value
+    #     sshKeySecureFile: 'id_rsa' # Use secure file feature in the pipeline library UI to save the "id_rsa" file, as mentioned here: https://learn.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops#add-a-secure-file
+    
+    # - task: DownloadSecureFile@1
+    #  name: udacity_public_key
+    #  displayName: 
+    #  inputs:
+    #   secureFile: 
 
-    - task: Bash@3
-      displayName: 'Terraform apply - create infrastructure'
-      inputs:
-        targetType: 'inline'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        script: |
-          terraform apply -input=false tfplan
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-
-    # STEP 2: Migrate to remote backend now that storage account exists
-    - task: Bash@3
-      displayName: 'Migrate to remote backend'
-      inputs:
-        targetType: 'inline'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        script: |
-          # Remove local backend override
-          rm -f backend_override.tf
-          
-          # Re-initialize with remote backend and migrate state
-          terraform init \
-            -migrate-state \
-            -force-copy \
-            -backend-config="storage_account_name=fstate2441011244" \
-            -backend-config="container_name=tfstate" \
-            -backend-config="key=test.terraform.tfstate" \
-            -backend-config="resource_group_name=Azuredevops"
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-
+    # Install SSH key on the agent so it can connect to your VM
     - task: InstallSSHKey@0
       displayName: Install SSH key for VM access
       inputs:
         knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
         sshPublicKey: '$(SSH_PUBLIC_KEY)'
         sshKeySecureFile: id_rsa.pub
-# #--------------------------------------------#  
-# # BUILD STAGE
-# #--------------------------------------------#    
-# - stage: Build
-#   jobs:
-#   - job: BuildInfrastructure
-#     steps:
-
-
-#    #--------------------------------------------#  
-#     # retrieve private key
-#     - task: DownloadSecureFile@1
-#       name: ssh_private_key
-#       inputs:
-#         secureFile: id_rsa.pub
-#     #--------------------------------------------#  
-#     # Use Terraform to create the Infrastructure      
-#     # Install Terraform on the pipeline agent 
-#     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-#       displayName: 'Terrafom installation'
-#       inputs:
-#         terraformVersion: '1.2.9'
-    
-#     # Run Terraform Init on the pipeline agent 
-#     # ToDo: Replace the resource group name, storage account name, and container name below
-#     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-#       displayName: 'Terrafom init'
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'init'
-#         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-#         backendServiceArm: '$(azureServiceConnectionId)'
-#         backendAzureRmResourceGroupName: 'Azuredevops'
-#         backendAzureRmStorageAccountName: 'fstate2441011244'
-#         backendAzureRmContainerName: 'tfstate'
-#         backendAzureRmKey: 'test.terraform.tfstate'
-
-
-#     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-#       displayName: Terraform validate
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'validate'
-
-#     # OPTIONAL - This step is needed only if your Terraform VM uses an SSH key pair for login and you want your pipeline agent to connect to it. 
-#     # Generate an SSH key pair in your local/AZ Cloud shell. Use the public key in the Terraform VM module. 
-#     # Install public key and private key file to the pipeline agent, using the task below. 
-#     # ToDo: Change the inputs value below
-#     # - task: InstallSSHKey@0
-#     #   inputs:
-#     #     knownHostsEntry: 'KNOWN_HOSTS_STRING' # variable value
-#     #     sshPublicKey: 'PUBLIC_KEY'            # variable value
-#     #     sshKeySecureFile: 'id_rsa' # Use secure file feature in the pipeline library UI to save the "id_rsa" file, as mentioned here: https://learn.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops#add-a-secure-file
-    
-#     # - task: DownloadSecureFile@1
-#     #  name: udacity_public_key
-#     #  displayName: 
-#     #  inputs:
-#     #   secureFile: 
-
-#     # Install SSH key on the agent so it can connect to your VM
-#     - task: InstallSSHKey@0
-#       displayName: Install SSH key for VM access
-#       inputs:
-#         knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
-#         sshPublicKey: '$(SSH_PUBLIC_KEY)'
-#         sshKeySecureFile: id_rsa.pub
 
     
-#     # Run Terraform Apply
-#     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-#       displayName: Terraform apply
-#       inputs:
-#         provider: 'azurerm'
-#         command: 'apply'
-#         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-#         environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+    # Run Terraform Apply
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+      displayName: Terraform apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+        environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
 
     # ToDo: Change the workingDirectory path, as applicable to you
     # Destroy the resources in Azure by running a separate pipeline. 
