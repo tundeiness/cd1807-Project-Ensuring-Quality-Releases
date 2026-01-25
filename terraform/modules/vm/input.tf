@@ -1,8 +1,10 @@
 variable "admin_username" {
+  description = "Admin username for the VM"
   type = string
 }
 
 variable "ssh_public_key" {
+  description = "SSH public key for VM authentication"
   type = string
   sensitive = true
 }
@@ -33,7 +35,7 @@ variable "public_ip_address_id" {
 
 # variable "admin_username" {
 #   type    = string
-#   default = "azureuser"
+#   # default = "azureuser"
 # }
 
 variable "vm_size" {

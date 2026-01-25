@@ -17,10 +17,13 @@ variable "vm_name" {
 # Pipeline Variables
 
 variable admin_username {
-  # type = string
+  type = string
+  default = "azureuser"
 }
 
 variable ssh_public_key {
   type = string
+  default = file("/Users/tunde/Desktop/udrsa/.ssh/id_rsa.pub")
+  # default = public_key = var.ssh_public_key
 }
 

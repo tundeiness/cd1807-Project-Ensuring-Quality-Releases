@@ -62,6 +62,6 @@ module "vm" {
   vm_name                   = var.vm_name
   network_security_group_id = module.nsg-test.network_security_group_id
   admin_username            = var.admin_username
-  ssh_public_key            = var.ssh_public_key 
+  ssh_public_key            = var.ssh_public_key
 }
 
