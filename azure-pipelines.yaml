@@ -1,8 +1,5 @@
 name: Azure Pipelines
 
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
 trigger:
 - main
 
@@ -21,9 +18,6 @@ variables:
 - name: environmentName
   value: 'test'
 
-
-
-
 stages:
 
 #--------------------------------------------#  
@@ -34,25 +28,17 @@ stages:
   - job: BuildInfrastructure
     steps:
 
-
-   #--------------------------------------------#  
-    # retrieve private key
-    - task: DownloadSecureFile@1
-      name: ssh_private_key
-      inputs:
-        secureFile: id_rsa.pub
     #--------------------------------------------#  
-    # Use Terraform to create the Infrastructure      
     # Install Terraform on the pipeline agent 
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-      displayName: 'Terrafom installation'
+      displayName: 'Terraform installation'
       inputs:
         terraformVersion: '1.2.9'
     
+    #--------------------------------------------#  
     # Run Terraform Init on the pipeline agent 
-    # ToDo: Replace the resource group name, storage account name, and container name below
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: 'Terrafom init'
+      displayName: 'Terraform init'
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -69,57 +55,39 @@ stages:
         ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
         ARM_ACCESS_KEY: $(ARM_ACCESS_KEY)
 
-
+    #--------------------------------------------#  
+    # Run Terraform Validate
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: Terraform validate
+      displayName: 'Terraform validate'
       inputs:
         provider: 'azurerm'
         command: 'validate'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
 
-    # OPTIONAL - This step is needed only if your Terraform VM uses an SSH key pair for login and you want your pipeline agent to connect to it. 
-    # Generate an SSH key pair in your local/AZ Cloud shell. Use the public key in the Terraform VM module. 
-    # Install public key and private key file to the pipeline agent, using the task below. 
-    # ToDo: Change the inputs value below
-    # - task: InstallSSHKey@0
-    #   inputs:
-    #     knownHostsEntry: 'KNOWN_HOSTS_STRING' # variable value
-    #     sshPublicKey: 'PUBLIC_KEY'            # variable value
-    #     sshKeySecureFile: 'id_rsa' # Use secure file feature in the pipeline library UI to save the "id_rsa" file, as mentioned here: https://learn.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops#add-a-secure-file
-    
-    # - task: DownloadSecureFile@1
-    #  name: udacity_public_key
-    #  displayName: 
-    #  inputs:
-    #   secureFile: 
+    #--------------------------------------------#  
+    # Download SSH private key (if needed for VM access)
+    - task: DownloadSecureFile@1
+      name: sshKey
+      displayName: 'Download SSH Key'
+      inputs:
+        secureFile: 'id_rsa'  # Changed from id_rsa.pub to id_rsa (private key)
 
-    # Install SSH key on the agent so it can connect to your VM
+    #--------------------------------------------#  
+    # Install SSH key on the agent (only if you need to SSH into VM from pipeline)
     - task: InstallSSHKey@0
-      displayName: Install SSH key for VM access
+      displayName: 'Install SSH key for VM access'
       inputs:
         knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
         sshPublicKey: '$(SSH_PUBLIC_KEY)'
-        sshKeySecureFile: id_rsa.pub
+        sshKeySecureFile: 'id_rsa'  # Changed from id_rsa.pub to id_rsa
 
+    #--------------------------------------------#  
     # Run Terraform Plan
     - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: Terraform plan
+      displayName: 'Terraform plan'
       inputs:
         provider: 'azurerm'
         command: 'plan'
-        environmentServiceNameAzureRM: 'your-service-connection-name'
-        commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)"'
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-    
-    # Run Terraform Apply
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: Terraform apply
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
         workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
         environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
         commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)"'
@@ -128,6 +96,15 @@ stages:
         ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
         ARM_TENANT_ID: $(ARM_TENANT_ID)
         ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+    
+    #--------------------------------------------#  
+    # Run Terraform Apply
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+      displayName: 'Terraform apply'
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkin
 
     # ToDo: Change the workingDirectory path, as applicable to you
     # Destroy the resources in Azure by running a separate pipeline. 
