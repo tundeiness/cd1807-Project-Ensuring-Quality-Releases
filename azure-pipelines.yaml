@@ -124,6 +124,122 @@ stages:
     #     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
     #     environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
 
+     #--------------------------------------------#  
+      # Postman API Tests
+      #--------------------------------------------#
+      - job: PostmanTests
+        displayName: 'Run Postman API Tests'
+        # dependsOn: BuildInfrastructure
+        pool: myAgentPool
+        steps:
+          #--------------------------------------------#  
+          # Install Newman (Postman CLI)
+          #--------------------------------------------#
+          - task: NodeTool@0
+            displayName: 'Install Node.js'
+            inputs:
+              versionSpec: '16.x'
+          
+          - task: CmdLine@2
+            displayName: 'Install Newman'
+            inputs:
+              script: 'npm install -g newman newman-reporter-junitfull'
+              workingDirectory: $(System.DefaultWorkingDirectory)
+          
+          #--------------------------------------------#  
+          # Run Postman Regression Test Suite
+          #--------------------------------------------#
+          - task: CmdLine@2
+            displayName: 'Run Regression Tests'
+            continueOnError: true
+            inputs:
+              script: |
+                newman run TestSuite.Regression.json \
+                  -e Test.environment.json \
+                  --reporters cli,junitfull \
+                  --reporter-junitfull-export TEST-Regression.xml
+              workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+          
+          #--------------------------------------------#  
+          # Run Postman Data Validation Test Suite
+          #--------------------------------------------#
+          - task: CmdLine@2
+            displayName: 'Run Data Validation Tests'
+            continueOnError: true
+            inputs:
+              script: |
+                newman run TestSuite.Data-Validation.json \
+                  -e Test.environment.json \
+                  --reporters cli,junitfull \
+                  --reporter-junitfull-export TEST-DataValidation.xml
+              workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+          
+          #--------------------------------------------#  
+          # Publish Postman Test Results
+          #--------------------------------------------#
+          - task: PublishTestResults@2
+            displayName: 'Publish Postman Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/TEST-*.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+              mergeTestResults: true
+              testRunTitle: 'Postman Test Results'
+              publishRunAttachments: true
+
+      #--------------------------------------------#  
+      # Archive and Publish Artifacts
+      #--------------------------------------------#
+      - job: ArchiveArtifacts
+        displayName: 'Archive and Publish Test Artifacts'
+        dependsOn: PostmanTests
+        pool: myAgentPool
+        steps:
+          #--------------------------------------------#
+          # Archive Selenium UI Tests
+          #--------------------------------------------#
+          - task: ArchiveFiles@2
+            displayName: 'Archive Selenium UI Tests'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/selenium'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-uitests.zip'
+          
+          - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-uitests.zip
+            displayName: 'Upload Selenium UI Tests Package'
+            artifact: drop-uitests
+
+          #--------------------------------------------#
+          # Archive FakeRestAPI
+          #--------------------------------------------#
+          - task: ArchiveFiles@2
+            displayName: 'Archive FakeRestAPI'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/fakerestapi'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
+          
+          - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
+            displayName: 'Upload FakeRestAPI Package'
+            artifact: drop-fakerestapi
+
+          #--------------------------------------------#
+          # Archive JMeter Performance Test Suite
+          #--------------------------------------------#
+          - task: ArchiveFiles@2
+            displayName: 'Archive JMeter Performance Tests'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/test-suite'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip'
+          
+          - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip
+            displayName: 'Upload JMeter Performance Tests Package'
+            artifact: drop-perftests
+
 #--------------------------------------------#    
 #     # Postman - Install Newman    
 #     # ToDo: Update the command and verify the working directory
