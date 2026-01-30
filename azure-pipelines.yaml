@@ -361,8 +361,10 @@ stages:
       - deployment: RunJMeterTests
         displayName: 'Execute JMeter Performance Tests'
 
-        pool: myAgentPool
-        environment: $(environmentName)
+        pool:
+          name: myAgentPool
+
+        environment: ${{ variables.environmentName }}
 
         strategy:
           runOnce:
@@ -376,6 +378,7 @@ stages:
                   displayName: 'Install Java + Apache JMeter'
                   inputs:
                     targetType: 'inline'
+                    workingDirectory: '$(Pipeline.Workspace)'
                     script: |
                       set -euo pipefail
 
@@ -397,13 +400,12 @@ stages:
                       fi
 
                       "$TOOLS_DIR/apache-jmeter-5.5/bin/jmeter" -v
-                  workingDirectory: '$(Pipeline.Workspace)'
 
                 - task: Bash@3
                   displayName: 'Run JMeter Stress Test Suite'
                   inputs:
                     targetType: 'inline'
-                    workingDirectory: '$(Pipeline.Workspace)'
+                    workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
                     script: |
                       set -euo pipefail
 
@@ -411,12 +413,10 @@ stages:
                       export PATH="$JAVA_HOME/bin:$PATH"
 
                       JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
-                      TEST_DIR="$(Pipeline.Workspace)/drop-perftests"
-                      cd "$TEST_DIR"
 
                       ZIP_FILE="$(ls -1 *.zip | head -n 1 || true)"
                       if [[ -z "${ZIP_FILE}" ]]; then
-                        echo "No .zip found in $TEST_DIR"
+                        echo "No .zip found in $(pwd)"
                         ls -la
                         exit 1
                       fi
@@ -434,7 +434,6 @@ stages:
 
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
                       [[ -d stress-test-report ]] && tar -czf "$(Build.ArtifactStagingDirectory)/stress-test-report.tar.gz" stress-test-report || true
-                  workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
 
                 - task: Bash@3
                   displayName: 'Run JMeter Endurance Test Suite'
@@ -448,8 +447,6 @@ stages:
                       export PATH="$JAVA_HOME/bin:$PATH"
 
                       JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
-                      TEST_DIR="$(Pipeline.Workspace)/drop-perftests"
-                      cd "$TEST_DIR"
 
                       "$JMETER" -n \
                         -t EnduranceTestSuite.jmx \
@@ -462,7 +459,6 @@ stages:
 
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
                       [[ -d endurance-test-report ]] && tar -czf "$(Build.ArtifactStagingDirectory)/endurance-test-report.tar.gz" endurance-test-report || true
-                  workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
 
                 - publish: $(Build.ArtifactStagingDirectory)
                   displayName: 'Publish JMeter HTML Reports'
