@@ -364,6 +364,8 @@ stages:
         pool:
           name: myAgentPool
 
+        # If this causes compile-time issues, switch to a parameter:
+        # environment: ${{ parameters.environmentName }}
         environment: ${{ variables.environmentName }}
 
         strategy:
@@ -374,6 +376,9 @@ stages:
                   artifact: drop-perftests
                   displayName: 'Download JMeter Test Suite'
 
+                #--------------------------------------------#
+                # Install Java + JMeter
+                #--------------------------------------------#
                 - task: Bash@3
                   displayName: 'Install Java + Apache JMeter'
                   inputs:
@@ -382,6 +387,7 @@ stages:
                     script: |
                       set -euo pipefail
 
+                      echo "== Install Java (required by JMeter) =="
                       sudo apt-get update -y
                       sudo apt-get install -y openjdk-17-jre-headless unzip tar wget
 
@@ -390,6 +396,7 @@ stages:
                       java -version
                       echo "JAVA_HOME=$JAVA_HOME"
 
+                      echo "== Install JMeter 5.5 =="
                       TOOLS_DIR="$(Pipeline.Workspace)/tools"
                       mkdir -p "$TOOLS_DIR"
                       cd "$TOOLS_DIR"
@@ -399,8 +406,12 @@ stages:
                         tar -xzf apache-jmeter-5.5.tgz
                       fi
 
+                      echo "JMeter version:"
                       "$TOOLS_DIR/apache-jmeter-5.5/bin/jmeter" -v
 
+                #--------------------------------------------#
+                # Run JMeter Stress Test
+                #--------------------------------------------#
                 - task: Bash@3
                   displayName: 'Run JMeter Stress Test Suite'
                   inputs:
@@ -409,32 +420,51 @@ stages:
                     script: |
                       set -euo pipefail
 
+                      # Ensure Java is available in this task too
                       export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
                       export PATH="$JAVA_HOME/bin:$PATH"
 
                       JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
 
+                      echo "== Locate and unzip perf tests zip =="
                       ZIP_FILE="$(ls -1 *.zip | head -n 1 || true)"
                       if [[ -z "${ZIP_FILE}" ]]; then
                         echo "No .zip found in $(pwd)"
                         ls -la
                         exit 1
                       fi
-
+                      echo "Using zip: $ZIP_FILE"
                       unzip -o "$ZIP_FILE"
 
+                      # ✅ IMPORTANT: JMeter requires output dir to be empty/nonexistent
+                      rm -rf stress-test-report
+                      rm -f stress-test.log stress-test-results.jtl
+
+                      echo "== Run Stress Test =="
                       "$JMETER" -n \
                         -t StressTestSuite.jmx \
                         -l stress-test-results.jtl \
                         -j stress-test.log \
                         -e -o stress-test-report
 
-                      echo "Stress Test Summary:"
-                      [[ -f stress-test.log ]] && (grep -i "summary" stress-test.log || true) || true
+                      echo "Stress Test Summary (if present):"
+                      if [[ -f stress-test.log ]]; then
+                        grep -i "summary" stress-test.log || true
+                        tail -n 120 stress-test.log || true
+                      else
+                        echo "stress-test.log not found."
+                      fi
 
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
-                      [[ -d stress-test-report ]] && tar -czf "$(Build.ArtifactStagingDirectory)/stress-test-report.tar.gz" stress-test-report || true
+                      if [[ -d stress-test-report ]]; then
+                        tar -czf "$(Build.ArtifactStagingDirectory)/stress-test-report.tar.gz" stress-test-report
+                      else
+                        echo "stress-test-report directory not found."
+                      fi
 
+                #--------------------------------------------#
+                # Run JMeter Endurance Test
+                #--------------------------------------------#
                 - task: Bash@3
                   displayName: 'Run JMeter Endurance Test Suite'
                   inputs:
@@ -448,21 +478,39 @@ stages:
 
                       JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
 
+                      # ✅ IMPORTANT: JMeter requires output dir to be empty/nonexistent
+                      rm -rf endurance-test-report
+                      rm -f endurance-test.log endurance-test-results.jtl
+
+                      echo "== Run Endurance Test =="
                       "$JMETER" -n \
                         -t EnduranceTestSuite.jmx \
                         -l endurance-test-results.jtl \
                         -j endurance-test.log \
                         -e -o endurance-test-report
 
-                      echo "Endurance Test Summary:"
-                      [[ -f endurance-test.log ]] && (grep -i "summary" endurance-test.log || true) || true
+                      echo "Endurance Test Summary (if present):"
+                      if [[ -f endurance-test.log ]]; then
+                        grep -i "summary" endurance-test.log || true
+                        tail -n 120 endurance-test.log || true
+                      else
+                        echo "endurance-test.log not found."
+                      fi
 
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
-                      [[ -d endurance-test-report ]] && tar -czf "$(Build.ArtifactStagingDirectory)/endurance-test-report.tar.gz" endurance-test-report || true
+                      if [[ -d endurance-test-report ]]; then
+                        tar -czf "$(Build.ArtifactStagingDirectory)/endurance-test-report.tar.gz" endurance-test-report
+                      else
+                        echo "endurance-test-report directory not found."
+                      fi
 
+                #--------------------------------------------#
+                # Publish JMeter Test Results
+                #--------------------------------------------#
                 - publish: $(Build.ArtifactStagingDirectory)
                   displayName: 'Publish JMeter HTML Reports'
                   artifact: jmeter-reports
+
 
 
 
