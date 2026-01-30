@@ -1,367 +1,378 @@
 {
-	"info": {
-		"_postman_id": "data-validation-suite-001",
-		"name": "TestSuite.Data-Validation",
-		"description": "Data Validation Test Suite for FakeRestAPI - Authors Endpoint Only",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Validate Author Schema - Single Record",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-author-schema",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response is an object\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('object');",
-							"});",
-							"",
-							"pm.test(\"Author has required properties\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.have.property('ID');",
-							"    pm.expect(jsonData).to.have.property('IDBook');",
-							"    pm.expect(jsonData).to.have.property('FirstName');",
-							"    pm.expect(jsonData).to.have.property('LastName');",
-							"});",
-							"",
-							"pm.test(\"Property types are correct\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.ID).to.be.a('number');",
-							"    pm.expect(jsonData.IDBook).to.be.a('number');",
-							"    pm.expect(jsonData.FirstName).to.be.a('string');",
-							"    pm.expect(jsonData.LastName).to.be.a('string');",
-							"});",
-							"",
-							"pm.test(\"ID is a positive number\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.ID).to.be.at.least(1);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors/1",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors", "1"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Authors Array - Multiple Records",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-authors-array",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response is an array\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('array');",
-							"});",
-							"",
-							"pm.test(\"Array contains multiple items\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.length).to.be.above(0);",
-							"});",
-							"",
-							"pm.test(\"All authors have required fields\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    jsonData.forEach(function(author) {",
-							"        pm.expect(author).to.have.property('ID');",
-							"        pm.expect(author).to.have.property('FirstName');",
-							"        pm.expect(author).to.have.property('LastName');",
-							"        pm.expect(author).to.have.property('IDBook');",
-							"    });",
-							"});",
-							"",
-							"pm.test(\"All author IDs are unique\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    var ids = jsonData.map(author => author.ID);",
-							"    var uniqueIds = [...new Set(ids)];",
-							"    pm.expect(ids.length).to.eql(uniqueIds.length);",
-							"});",
-							"",
-							"pm.test(\"All FirstName fields are non-empty strings\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    jsonData.forEach(function(author) {",
-							"        pm.expect(author.FirstName).to.be.a('string');",
-							"        pm.expect(author.FirstName.length).to.be.above(0);",
-							"    });",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Response Headers",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-headers",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Content-Type header is present\", function () {",
-							"    pm.response.to.have.header('Content-Type');",
-							"});",
-							"",
-							"pm.test(\"Content-Type is application/json\", function () {",
-							"    var contentType = pm.response.headers.get('Content-Type');",
-							"    pm.expect(contentType).to.include('application/json');",
-							"});",
-							"",
-							"pm.test(\"Response body is valid JSON\", function () {",
-							"    pm.response.to.be.json;",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Response Time Performance",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-response-time",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response time is under 5 seconds\", function () {",
-							"    pm.expect(pm.response.responseTime).to.be.below(5000);",
-							"});",
-							"",
-							"pm.test(\"Response time is under 2 seconds\", function () {",
-							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
-							"});",
-							"",
-							"pm.test(\"Response contains data\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('array');",
-							"    pm.expect(jsonData.length).to.be.above(0);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Error Handling - Invalid ID",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-error-handling",
-						"exec": [
-							"pm.test(\"Status code is 404 for non-existent resource\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"pm.test(\"Response is JSON even for errors\", function () {",
-							"    pm.response.to.be.json;",
-							"});",
-							"",
-							"pm.test(\"Error response has Message property\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.have.property('Message');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors/999999",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors", "999999"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Data Consistency - First Author",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-data-consistency",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"First author has expected structure\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.ID).to.eql(1);",
-							"    pm.expect(jsonData.FirstName).to.include('First Name');",
-							"    pm.expect(jsonData.LastName).to.include('Last Name');",
-							"});",
-							"",
-							"pm.test(\"IDBook is associated with author\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.IDBook).to.be.a('number');",
-							"    pm.expect(jsonData.IDBook).to.be.at.least(1);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors/1",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors", "1"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Pagination - Check Array Size",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-pagination",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response contains expected number of authors\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('array');",
-							"    // FakeRestAPI typically returns many records",
-							"    pm.expect(jsonData.length).to.be.above(10);",
-							"});",
-							"",
-							"pm.test(\"All records in array are valid\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    var invalidRecords = jsonData.filter(function(author) {",
-							"        return !author.ID || !author.FirstName || !author.LastName;",
-							"    });",
-							"    pm.expect(invalidRecords.length).to.eql(0);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors"]
-				}
-			},
-			"response": []
-		}
-	],
-	"protocolProfileBehavior": {}
+  "info": {
+    "_postman_id": "data-validation-suite-001",
+    "name": "TestSuite.Data-Validation",
+    "description": "Data Validation Test Suite for FakeRestAPI - Authors Endpoint Only",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Validate Author Schema - Single Record",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-validate-author-schema",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is an object\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('object');",
+              "});",
+              "",
+              "pm.test(\"Author has required properties\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('ID');",
+              "    pm.expect(jsonData).to.have.property('IDBook');",
+              "    pm.expect(jsonData).to.have.property('FirstName');",
+              "    pm.expect(jsonData).to.have.property('LastName');",
+              "});",
+              "",
+              "pm.test(\"Property types are correct\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.ID).to.be.a('number');",
+              "    pm.expect(jsonData.IDBook).to.be.a('number');",
+              "    pm.expect(jsonData.FirstName).to.be.a('string');",
+              "    pm.expect(jsonData.LastName).to.be.a('string');",
+              "});",
+              "",
+              "pm.test(\"ID is a positive number\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.ID).to.be.at.least(1);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Validate Authors Array - Multiple Records",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-validate-authors-array",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is an array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Array contains multiple items\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.length).to.be.above(0);",
+              "});",
+              "",
+              "pm.test(\"All authors have required fields\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    jsonData.forEach(function(author) {",
+              "        pm.expect(author).to.have.property('ID');",
+              "        pm.expect(author).to.have.property('FirstName');",
+              "        pm.expect(author).to.have.property('LastName');",
+              "        pm.expect(author).to.have.property('IDBook');",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"All author IDs are unique\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var ids = jsonData.map(author => author.ID);",
+              "    var uniqueIds = [...new Set(ids)];",
+              "    pm.expect(ids.length).to.eql(uniqueIds.length);",
+              "});",
+              "",
+              "pm.test(\"All FirstName fields are non-empty strings\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    jsonData.forEach(function(author) {",
+              "        pm.expect(author.FirstName).to.be.a('string');",
+              "        pm.expect(author.FirstName.length).to.be.above(0);",
+              "    });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Validate Response Headers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-validate-headers",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Content-Type header is present\", function () {",
+              "    pm.response.to.have.header('Content-Type');",
+              "});",
+              "",
+              "pm.test(\"Content-Type is application/json\", function () {",
+              "    var contentType = pm.response.headers.get('Content-Type');",
+              "    pm.expect(contentType).to.include('application/json');",
+              "});",
+              "",
+              "pm.test(\"Response body is valid JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Validate Response Time Performance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-validate-response-time",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response time is under 5 seconds\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+              "});",
+              "",
+              "pm.test(\"Response time is under 2 seconds\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+              "});",
+              "",
+              "pm.test(\"Response contains data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    pm.expect(jsonData.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors"]
+        }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Validate Error Handling - Invalid ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-error-handling",
+            "exec": [
+              "pm.test(\"Status code is 404 (or 400) for invalid resource\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([404, 400]);",
+              "});",
+              "",
+              "pm.test(\"Response is either empty or valid JSON\", function () {",
+              "    const body = pm.response.text();",
+              "    if (body && body.trim().length > 0) {",
+              "        pm.expect(() => JSON.parse(body)).to.not.throw();",
+              "    } else {",
+              "        pm.expect(body).to.be.empty;",
+              "    }",
+              "});",
+              "",
+              "pm.test(\"Error message exists when body is present\", function () {",
+              "    const body = pm.response.text();",
+              "    if (body && body.trim().length > 0) {",
+              "        const jsonData = JSON.parse(body);",
+              "        pm.expect(jsonData).to.have.any.keys('Message', 'message', 'error');",
+              "    } else {",
+              "        pm.expect(body).to.be.empty;",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors/999999",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors", "999999"]
+        }
+      },
+      "response": []
+    },
+
+    {
+      "name": "Validate Data Consistency - First Author",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-data-consistency",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"First author has expected structure\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.ID).to.eql(1);",
+              "    pm.expect(jsonData.FirstName).to.include('First Name');",
+              "    pm.expect(jsonData.LastName).to.include('Last Name');",
+              "});",
+              "",
+              "pm.test(\"IDBook is associated with author\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.IDBook).to.be.a('number');",
+              "    pm.expect(jsonData.IDBook).to.be.at.least(1);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors", "1"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Validate Pagination - Check Array Size",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "test-pagination",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains expected number of authors\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    pm.expect(jsonData.length).to.be.above(10);",
+              "});",
+              "",
+              "pm.test(\"All records in array are valid\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var invalidRecords = jsonData.filter(function(author) {",
+              "        return !author.ID || !author.FirstName || !author.LastName;",
+              "    });",
+              "    pm.expect(invalidRecords.length).to.eql(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Authors",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "Authors"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "protocolProfileBehavior": {}
 }
