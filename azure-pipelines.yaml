@@ -1,110 +1,115 @@
 name: Azure Pipelines
 
 trigger:
-- main
+  - main
 
 # ToDo: Replace the agent pool name, if you are using Udacity Cloud lab. 
 # Otherwise, comment out the line below. 
 pool: myAgentPool
 
 variables:
-- group: azure-credentials
-- name: python.version
-  value: '3.8.10'
-- name: azureServiceConnectionId
-  value: 'myConnex'
-- name: projectRoot
-  value: $(System.DefaultWorkingDirectory)
-- name: environmentName
-  value: 'test'
+  - group: azure-credentials
+  - name: python.version
+    value: '3.8.10'
+  - name: azureServiceConnectionId
+    value: 'myConnex'
+  - name: projectRoot
+    value: $(System.DefaultWorkingDirectory)
+  - name: environmentName
+    value: 'test'
 
 stages:
+  #--------------------------------------------#  
+  # BUILD STAGE
+  #--------------------------------------------#    
+  - stage: Build
+    jobs:
+      - job: BuildInfrastructure
+        steps:
+          #--------------------------------------------#  
+          # Install Terraform on the pipeline agent 
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+            displayName: 'Terraform installation'
+            inputs:
+              terraformVersion: '1.2.9'
+          
+          #--------------------------------------------#  
+          # Run Terraform Init on the pipeline agent 
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+            displayName: 'Terraform init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+              backendServiceArm: '$(azureServiceConnectionId)'
+              backendAzureRmResourceGroupName: 'Azuredevops'
+              backendAzureRmStorageAccountName: 'tfstate782820281'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'test.terraform.tfstate'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_ACCESS_KEY: $(ARM_ACCESS_KEY)
 
-#--------------------------------------------#  
-# BUILD STAGE
-#--------------------------------------------#    
-- stage: Build
-  jobs:
-  - job: BuildInfrastructure
-    steps:
+          #--------------------------------------------#  
+          # Run Terraform Validate
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+            displayName: 'Terraform validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
 
-    #--------------------------------------------#  
-    # Install Terraform on the pipeline agent 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
-      displayName: 'Terraform installation'
-      inputs:
-        terraformVersion: '1.2.9'
-    
-    #--------------------------------------------#  
-    # Run Terraform Init on the pipeline agent 
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: 'Terraform init'
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        backendServiceArm: '$(azureServiceConnectionId)'
-        backendAzureRmResourceGroupName: 'Azuredevops'
-        backendAzureRmStorageAccountName: 'tfstate782820281'
-        backendAzureRmContainerName: 'tfstate'
-        backendAzureRmKey: 'test.terraform.tfstate'
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-        ARM_ACCESS_KEY: $(ARM_ACCESS_KEY)
+          #--------------------------------------------#  
+          # Download SSH private key (if needed for VM access)
+          - task: DownloadSecureFile@1
+            name: sshKey
+            displayName: 'Download SSH Key'
+            inputs:
+              secureFile: 'id_rsa'
 
-    #--------------------------------------------#  
-    # Run Terraform Validate
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: 'Terraform validate'
-      inputs:
-        provider: 'azurerm'
-        command: 'validate'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+          #--------------------------------------------#  
+          # Install SSH key on the agent (only if you need to SSH into VM from pipeline)
+          - task: InstallSSHKey@0
+            displayName: 'Install SSH key for VM access'
+            inputs:
+              knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
+              sshPublicKey: '$(SSH_PUBLIC_KEY)'
+              sshKeySecureFile: 'id_rsa'
 
-    #--------------------------------------------#  
-    # Download SSH private key (if needed for VM access)
-    - task: DownloadSecureFile@1
-      name: sshKey
-      displayName: 'Download SSH Key'
-      inputs:
-        secureFile: 'id_rsa'  # Changed from id_rsa.pub to id_rsa (private key)
-
-    #--------------------------------------------#  
-    # Install SSH key on the agent (only if you need to SSH into VM from pipeline)
-    - task: InstallSSHKey@0
-      displayName: 'Install SSH key for VM access'
-      inputs:
-        knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
-        sshPublicKey: '$(SSH_PUBLIC_KEY)'
-        sshKeySecureFile: 'id_rsa'  # Changed from id_rsa.pub to id_rsa
-
-    #--------------------------------------------#  
-    # Run Terraform Plan
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: 'Terraform plan'
-      inputs:
-        provider: 'azurerm'
-        command: 'plan'
-        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-        environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
-        commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)"'
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-    
-    #--------------------------------------------#  
-    # Run Terraform Apply
-    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-      displayName: 'Terraform apply'
-      inputs:
-        provider: 'azurerm'
-        command: 'apply'
-        workingDirectory: '$(System.DefaultWorkin
+          #--------------------------------------------#  
+          # Run Terraform Plan
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+            displayName: 'Terraform plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+              environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+              commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)"'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+          
+          #--------------------------------------------#  
+          # Run Terraform Apply
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+            displayName: 'Terraform apply'
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+              environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+              commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)" -auto-approve'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
     # ToDo: Change the workingDirectory path, as applicable to you
     # Destroy the resources in Azure by running a separate pipeline. 
