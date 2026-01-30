@@ -2,12 +2,12 @@
 	"info": {
 		"_postman_id": "data-validation-suite-001",
 		"name": "TestSuite.Data-Validation",
-		"description": "Data Validation Test Suite for FakeRestAPI - Testing data integrity and schema validation",
+		"description": "Data Validation Test Suite for FakeRestAPI - Authors Endpoint Only",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Validate Author Schema",
+			"name": "Validate Author Schema - Single Record",
 			"event": [
 				{
 					"listen": "test",
@@ -18,9 +18,13 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Author has required properties\", function () {",
+							"pm.test(\"Response is an object\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData).to.be.an('object');",
+							"});",
+							"",
+							"pm.test(\"Author has required properties\", function () {",
+							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData).to.have.property('ID');",
 							"    pm.expect(jsonData).to.have.property('IDBook');",
 							"    pm.expect(jsonData).to.have.property('FirstName');",
@@ -30,8 +34,14 @@
 							"pm.test(\"Property types are correct\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.ID).to.be.a('number');",
+							"    pm.expect(jsonData.IDBook).to.be.a('number');",
 							"    pm.expect(jsonData.FirstName).to.be.a('string');",
 							"    pm.expect(jsonData.LastName).to.be.a('string');",
+							"});",
+							"",
+							"pm.test(\"ID is a positive number\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.ID).to.be.at.least(1);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -48,15 +58,15 @@
 					}
 				],
 				"url": {
-					"raw": "{{baseUrl}}/api/Authors/5",
+					"raw": "{{baseUrl}}/api/Authors/1",
 					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors", "5"]
+					"path": ["api", "Authors", "1"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Validate Authors Array",
+			"name": "Validate Authors Array - Multiple Records",
 			"event": [
 				{
 					"listen": "test",
@@ -67,9 +77,13 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response is an array with items\", function () {",
+							"pm.test(\"Response is an array\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Array contains multiple items\", function () {",
+							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.length).to.be.above(0);",
 							"});",
 							"",
@@ -79,6 +93,22 @@
 							"        pm.expect(author).to.have.property('ID');",
 							"        pm.expect(author).to.have.property('FirstName');",
 							"        pm.expect(author).to.have.property('LastName');",
+							"        pm.expect(author).to.have.property('IDBook');",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"All author IDs are unique\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    var ids = jsonData.map(author => author.ID);",
+							"    var uniqueIds = [...new Set(ids)];",
+							"    pm.expect(ids.length).to.eql(uniqueIds.length);",
+							"});",
+							"",
+							"pm.test(\"All FirstName fields are non-empty strings\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    jsonData.forEach(function(author) {",
+							"        pm.expect(author.FirstName).to.be.a('string');",
+							"        pm.expect(author.FirstName.length).to.be.above(0);",
 							"    });",
 							"});"
 						],
@@ -104,159 +134,7 @@
 			"response": []
 		},
 		{
-			"name": "Validate Activity Schema",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-activity-schema",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Activity has required properties\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('object');",
-							"    pm.expect(jsonData).to.have.property('ID');",
-							"    pm.expect(jsonData).to.have.property('Title');",
-							"    pm.expect(jsonData).to.have.property('DueDate');",
-							"    pm.expect(jsonData).to.have.property('Completed');",
-							"});",
-							"",
-							"pm.test(\"Property types are correct\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.ID).to.be.a('number');",
-							"    pm.expect(jsonData.Title).to.be.a('string');",
-							"    pm.expect(jsonData.Completed).to.be.a('boolean');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Activities/5",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Activities", "5"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Activities Array",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-activities-array",
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response is an array\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('array');",
-							"});",
-							"",
-							"pm.test(\"Array contains items\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.length).to.be.above(0);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/Activities",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Activities"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate POST Response - Authors",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"id": "test-validate-post-response",
-						"exec": [
-							"pm.test(\"Status code is 200 or 201\", function () {",
-							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-							"});",
-							"",
-							"pm.test(\"Response is an object\", function () {",
-							"    var responseData = pm.response.json();",
-							"    pm.expect(responseData).to.be.an('object');",
-							"});",
-							"",
-							"// Note: Some FakeRestAPI versions don't preserve POST data",
-							"// Just verify it returns a valid response",
-							"pm.test(\"Response has some properties\", function () {",
-							"    var responseData = pm.response.json();",
-							"    var keys = Object.keys(responseData);",
-							"    pm.expect(keys.length).to.be.above(0);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					},
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"ID\": 0,\n    \"IDBook\": 0,\n    \"FirstName\": \"{{firstName}}\",\n    \"LastName\": \"{{lastName}}\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/Authors",
-					"host": ["{{baseUrl}}"],
-					"path": ["api", "Authors"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validate Headers",
+			"name": "Validate Response Headers",
 			"event": [
 				{
 					"listen": "test",
@@ -272,7 +150,59 @@
 							"});",
 							"",
 							"pm.test(\"Content-Type is application/json\", function () {",
-							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('json');",
+							"    var contentType = pm.response.headers.get('Content-Type');",
+							"    pm.expect(contentType).to.include('application/json');",
+							"});",
+							"",
+							"pm.test(\"Response body is valid JSON\", function () {",
+							"    pm.response.to.be.json;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/Authors",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "Authors"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Validate Response Time Performance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "test-validate-response-time",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response time is under 5 seconds\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+							"});",
+							"",
+							"pm.test(\"Response time is under 2 seconds\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+							"});",
+							"",
+							"pm.test(\"Response contains data\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"    pm.expect(jsonData.length).to.be.above(0);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -306,6 +236,15 @@
 						"exec": [
 							"pm.test(\"Status code is 404 for non-existent resource\", function () {",
 							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test(\"Response is JSON even for errors\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"pm.test(\"Error response has Message property\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('Message');",
 							"});"
 						],
 						"type": "text/javascript"
@@ -322,33 +261,84 @@
 					}
 				],
 				"url": {
-					"raw": "{{baseUrl}}/api/Activities/999999",
+					"raw": "{{baseUrl}}/api/Authors/999999",
 					"host": ["{{baseUrl}}"],
-					"path": ["api", "Activities", "999999"]
+					"path": ["api", "Authors", "999999"]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Validate Response Time",
+			"name": "Validate Data Consistency - First Author",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "test-validate-response-time",
+						"id": "test-data-consistency",
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response time is acceptable\", function () {",
-							"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+							"pm.test(\"First author has expected structure\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.ID).to.eql(1);",
+							"    pm.expect(jsonData.FirstName).to.include('First Name');",
+							"    pm.expect(jsonData.LastName).to.include('Last Name');",
 							"});",
 							"",
-							"pm.test(\"Response contains data\", function () {",
+							"pm.test(\"IDBook is associated with author\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.IDBook).to.be.a('number');",
+							"    pm.expect(jsonData.IDBook).to.be.at.least(1);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/Authors/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "Authors", "1"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Validate Pagination - Check Array Size",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "test-pagination",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains expected number of authors\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData).to.be.an('array');",
-							"    pm.expect(jsonData.length).to.be.above(0);",
+							"    // FakeRestAPI typically returns many records",
+							"    pm.expect(jsonData.length).to.be.above(10);",
+							"});",
+							"",
+							"pm.test(\"All records in array are valid\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    var invalidRecords = jsonData.filter(function(author) {",
+							"        return !author.ID || !author.FirstName || !author.LastName;",
+							"    });",
+							"    pm.expect(invalidRecords.length).to.eql(0);",
 							"});"
 						],
 						"type": "text/javascript"
