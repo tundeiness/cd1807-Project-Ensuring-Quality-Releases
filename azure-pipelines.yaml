@@ -129,7 +129,7 @@ stages:
       #--------------------------------------------#
       - job: PostmanTests
         displayName: 'Run Postman API Tests'
-        dependsOn: BuildInfrastructure
+        # dependsOn: BuildInfrastructure
         pool: myAgentPool
         steps:
           #--------------------------------------------#  
