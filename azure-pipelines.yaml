@@ -471,13 +471,9 @@ stages:
       #--------------------------------------------#
       - deployment: RunSeleniumTests
         displayName: 'Execute Selenium UI Tests on VM'
-        dependsOn: DeployFakeRestAPI
-        pool:
-          name: myAgentPool
-        environment:
-          name: $(environmentName)
-          resourceType: VirtualMachine
-          tags: selenium
+        # dependsOn: DeployFakeRestAPI
+        pool: myAgentPool
+        environment: ${{ variables.environmentName }}
         strategy:
           runOnce:
             deploy:
