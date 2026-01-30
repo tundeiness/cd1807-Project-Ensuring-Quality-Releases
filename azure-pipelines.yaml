@@ -403,6 +403,7 @@ stages:
                   displayName: 'Run JMeter Stress Test Suite'
                   inputs:
                     targetType: 'inline'
+                    workingDirectory: '$(Pipeline.Workspace)'
                     script: |
                       set -euo pipefail
 
@@ -439,6 +440,7 @@ stages:
                   displayName: 'Run JMeter Endurance Test Suite'
                   inputs:
                     targetType: 'inline'
+                    workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
                     script: |
                       set -euo pipefail
 
