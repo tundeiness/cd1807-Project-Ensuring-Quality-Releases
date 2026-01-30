@@ -12,7 +12,7 @@ address_prefix_test = "10.5.1.0/24"
 
 # Pipeline Variables
 admin_username = "azureuser"
-# ssh_public_key = "/Users/tunde/Desktop/udrsa/.ssh/id_rsa.pub"
+ssh_public_key = "/Users/tunde/Desktop/udrsa/.ssh/id_rsa.pub"
 # ssh_public_key = "value"
 
 # VM

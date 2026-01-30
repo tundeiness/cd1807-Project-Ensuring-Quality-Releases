@@ -23,7 +23,7 @@ variable admin_username {
 
 variable ssh_public_key {
   type = string
-  # default = file("/Users/tunde/Desktop/udrsa/.ssh/id_rsa.pub")
+  default = file("/Users/tunde/Desktop/udrsa/.ssh/id_rsa.pub")
   # default = public_key = var.ssh_public_key
   description = "Path to SSH public key file"
 }

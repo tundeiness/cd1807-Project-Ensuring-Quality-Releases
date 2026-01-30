@@ -21,6 +21,6 @@ resource "azurerm_linux_web_app" "test" {
   }
   
   site_config {
-    always_on = false  # for Y1/Consumption plan
+    always_on = false
   }
 }
