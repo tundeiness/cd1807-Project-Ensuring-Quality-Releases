@@ -356,152 +356,116 @@ stages:
 
 
       #--------------------------------------------#
-# Run JMeter Performance Tests
-#--------------------------------------------#
-- deployment: RunJMeterTests
-  displayName: 'Execute JMeter Performance Tests'
-  pool: 'myAgentPool'
-  environment: $(environmentName)
-  strategy:
-    runOnce:
-      deploy:
-        steps:
-          - download: current
-            artifact: drop-perftests
-            displayName: 'Download JMeter Test Suite'
+      # Run JMeter Performance Tests
+      #--------------------------------------------#
+      - deployment: RunJMeterTests
+        displayName: 'Execute JMeter Performance Tests'
 
-          #--------------------------------------------#
-          # Install Java + JMeter
-          #--------------------------------------------#
-          - task: Bash@3
-            displayName: 'Install Java + Apache JMeter'
-            inputs:
-              targetType: 'inline'
-              script: |
-                set -euo pipefail
+        pool: myAgentPool
+        environment: $(environmentName)
 
-                echo "== Install Java (required by JMeter) =="
-                sudo apt-get update -y
-                sudo apt-get install -y openjdk-17-jre-headless unzip tar wget
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop-perftests
+                  displayName: 'Download JMeter Test Suite'
 
-                export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
-                export PATH="$JAVA_HOME/bin:$PATH"
-                java -version
-                echo "JAVA_HOME=$JAVA_HOME"
+                - task: Bash@3
+                  displayName: 'Install Java + Apache JMeter'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -euo pipefail
 
-                echo "== Install JMeter 5.5 =="
-                TOOLS_DIR="$(Pipeline.Workspace)/tools"
-                mkdir -p "$TOOLS_DIR"
-                cd "$TOOLS_DIR"
+                      sudo apt-get update -y
+                      sudo apt-get install -y openjdk-17-jre-headless unzip tar wget
 
-                if [[ ! -d apache-jmeter-5.5 ]]; then
-                  wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.5.tgz
-                  tar -xzf apache-jmeter-5.5.tgz
-                fi
+                      export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+                      export PATH="$JAVA_HOME/bin:$PATH"
+                      java -version
+                      echo "JAVA_HOME=$JAVA_HOME"
 
-                echo "JMeter version:"
-                "$TOOLS_DIR/apache-jmeter-5.5/bin/jmeter" -v
-            workingDirectory: '$(Pipeline.Workspace)'
+                      TOOLS_DIR="$(Pipeline.Workspace)/tools"
+                      mkdir -p "$TOOLS_DIR"
+                      cd "$TOOLS_DIR"
 
-          #--------------------------------------------#
-          # Run JMeter Stress Test
-          #--------------------------------------------#
-          - task: Bash@3
-            displayName: 'Run JMeter Stress Test Suite'
-            inputs:
-              targetType: 'inline'
-              script: |
-                set -euo pipefail
+                      if [[ ! -d apache-jmeter-5.5 ]]; then
+                        wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.5.tgz
+                        tar -xzf apache-jmeter-5.5.tgz
+                      fi
 
-                # Ensure Java is available in this task too (tasks don't share env reliably)
-                export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
-                export PATH="$JAVA_HOME/bin:$PATH"
+                      "$TOOLS_DIR/apache-jmeter-5.5/bin/jmeter" -v
+                  workingDirectory: '$(Pipeline.Workspace)'
 
-                JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
-                TEST_DIR="$(Pipeline.Workspace)/drop-perftests"
-                cd "$TEST_DIR"
+                - task: Bash@3
+                  displayName: 'Run JMeter Stress Test Suite'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -euo pipefail
 
-                echo "== Locate and unzip perf tests zip =="
-                ZIP_FILE="$(ls -1 *.zip | head -n 1 || true)"
-                if [[ -z "${ZIP_FILE}" ]]; then
-                  echo "No .zip found in $TEST_DIR"
-                  ls -la
-                  exit 1
-                fi
-                echo "Using zip: $ZIP_FILE"
-                unzip -o "$ZIP_FILE"
+                      export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+                      export PATH="$JAVA_HOME/bin:$PATH"
 
-                echo "== Run Stress Test =="
-                "$JMETER" -n \
-                  -t StressTestSuite.jmx \
-                  -l stress-test-results.jtl \
-                  -j stress-test.log \
-                  -e -o stress-test-report
+                      JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
+                      TEST_DIR="$(Pipeline.Workspace)/drop-perftests"
+                      cd "$TEST_DIR"
 
-                echo "Stress Test Summary (if present):"
-                if [[ -f stress-test.log ]]; then
-                  grep -i "summary" stress-test.log || true
-                  tail -n 120 stress-test.log || true
-                else
-                  echo "stress-test.log not found."
-                fi
+                      ZIP_FILE="$(ls -1 *.zip | head -n 1 || true)"
+                      if [[ -z "${ZIP_FILE}" ]]; then
+                        echo "No .zip found in $TEST_DIR"
+                        ls -la
+                        exit 1
+                      fi
 
-                mkdir -p "$(Build.ArtifactStagingDirectory)"
-                if [[ -d stress-test-report ]]; then
-                  tar -czf "$(Build.ArtifactStagingDirectory)/stress-test-report.tar.gz" stress-test-report
-                else
-                  echo "stress-test-report directory not found."
-                fi
+                      unzip -o "$ZIP_FILE"
 
-            workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
+                      "$JMETER" -n \
+                        -t StressTestSuite.jmx \
+                        -l stress-test-results.jtl \
+                        -j stress-test.log \
+                        -e -o stress-test-report
 
-          #--------------------------------------------#
-          # Run JMeter Endurance Test
-          #--------------------------------------------#
-          - task: Bash@3
-            displayName: 'Run JMeter Endurance Test Suite'
-            inputs:
-              targetType: 'inline'
-              script: |
-                set -euo pipefail
+                      echo "Stress Test Summary:"
+                      [[ -f stress-test.log ]] && (grep -i "summary" stress-test.log || true) || true
 
-                export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
-                export PATH="$JAVA_HOME/bin:$PATH"
+                      mkdir -p "$(Build.ArtifactStagingDirectory)"
+                      [[ -d stress-test-report ]] && tar -czf "$(Build.ArtifactStagingDirectory)/stress-test-report.tar.gz" stress-test-report || true
+                  workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
 
-                JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
-                TEST_DIR="$(Pipeline.Workspace)/drop-perftests"
-                cd "$TEST_DIR"
+                - task: Bash@3
+                  displayName: 'Run JMeter Endurance Test Suite'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -euo pipefail
 
-                echo "== Run Endurance Test =="
-                "$JMETER" -n \
-                  -t EnduranceTestSuite.jmx \
-                  -l endurance-test-results.jtl \
-                  -j endurance-test.log \
-                  -e -o endurance-test-report
+                      export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+                      export PATH="$JAVA_HOME/bin:$PATH"
 
-                echo "Endurance Test Summary (if present):"
-                if [[ -f endurance-test.log ]]; then
-                  grep -i "summary" endurance-test.log || true
-                  tail -n 120 endurance-test.log || true
-                else
-                  echo "endurance-test.log not found."
-                fi
+                      JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.5/bin/jmeter"
+                      TEST_DIR="$(Pipeline.Workspace)/drop-perftests"
+                      cd "$TEST_DIR"
 
-                mkdir -p "$(Build.ArtifactStagingDirectory)"
-                if [[ -d endurance-test-report ]]; then
-                  tar -czf "$(Build.ArtifactStagingDirectory)/endurance-test-report.tar.gz" endurance-test-report
-                else
-                  echo "endurance-test-report directory not found."
-                fi
+                      "$JMETER" -n \
+                        -t EnduranceTestSuite.jmx \
+                        -l endurance-test-results.jtl \
+                        -j endurance-test.log \
+                        -e -o endurance-test-report
 
-            workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
+                      echo "Endurance Test Summary:"
+                      [[ -f endurance-test.log ]] && (grep -i "summary" endurance-test.log || true) || true
 
-          #--------------------------------------------#
-          # Publish JMeter Test Results
-          #--------------------------------------------#
-          - publish: $(Build.ArtifactStagingDirectory)
-            displayName: 'Publish JMeter HTML Reports'
-            artifact: jmeter-reports
+                      mkdir -p "$(Build.ArtifactStagingDirectory)"
+                      [[ -d endurance-test-report ]] && tar -czf "$(Build.ArtifactStagingDirectory)/endurance-test-report.tar.gz" endurance-test-report || true
+                  workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
+
+                - publish: $(Build.ArtifactStagingDirectory)
+                  displayName: 'Publish JMeter HTML Reports'
+                  artifact: jmeter-reports
+
 
 
       #--------------------------------------------#  
