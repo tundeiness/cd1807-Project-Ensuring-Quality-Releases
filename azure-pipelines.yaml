@@ -174,17 +174,17 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
 
           
-          #--------------------------------------------#  
-          # Publish Postman Test Results
+         #--------------------------------------------#
+          # Publish Postman Regression Results
           #--------------------------------------------#
           - task: PublishTestResults@2
-            displayName: 'Publish Postman Test Results'
+            displayName: 'Publish Postman Regression Results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: '**/TEST-*.xml'
+              testResultsFiles: 'TEST-Regression.xml'
               searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-              mergeTestResults: true
-              testRunTitle: 'Postman Test Results'
+              failTaskOnFailedTests: false
+              testRunTitle: 'API Regression Tests'
               publishRunAttachments: true
 
       #--------------------------------------------#  
