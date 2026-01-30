@@ -4,7 +4,7 @@
 	"values": [
 		{
 			"key": "baseUrl",
-			"value": "https://udacityapp-appservice-app-2158f50c.azurewebsites.net/api",
+			"value": "https://udacityapp-appservice-app-2158f50c.azurewebsites.net",
 			"enabled": true,
 			"type": "default"
 		},
