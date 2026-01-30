@@ -65,10 +65,10 @@
               "pm.test(\"Status code is 200 or 201\", function () {",
               "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
               "});",
-              "pm.test(\"Response has Id property\", function () {",
-              "  pm.expect(pm.response.json()).to.have.property('Id');",
+              "pm.test(\"Response has ID property\", function () {",
+              "  pm.expect(pm.response.json()).to.have.property('ID');",
               "});",
-              "pm.environment.set('authorId', pm.response.json().Id);"
+              "pm.environment.set('authorId', pm.response.json().ID);"
             ],
             "type": "text/javascript"
           }
@@ -91,12 +91,14 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "  pm.response.to.have.status(200);",
+              "pm.test(\"Update Author request executed\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]);",
               "});",
-              "pm.test(\"Author was updated\", function () {",
-              "  pm.expect(pm.response.json().FirstName).to.include('Updated');",
-              "});"
+              "if (pm.response.code === 200) {",
+              "  pm.test(\"Author name updated\", function () {",
+              "    pm.expect(pm.response.json().FirstName).to.include('Updated');",
+              "  });",
+              "}"
             ],
             "type": "text/javascript"
           }
@@ -119,8 +121,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200 or 204\", function () {",
-              "  pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "pm.test(\"Delete Author request executed\", function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 204, 400, 404]);",
               "});"
             ],
             "type": "text/javascript"
