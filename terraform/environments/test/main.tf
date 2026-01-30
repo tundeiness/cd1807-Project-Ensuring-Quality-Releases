@@ -8,7 +8,7 @@ terraform {
     storage_account_name = "tfstate782820281"
     container_name       = "tfstate"
     key                  = "test.terraform.tfstate"
-    use_azuread_auth     = true
+    # use_azuread_auth     = true
   }
 }
 module "resource_group" {
