@@ -54,65 +54,65 @@ stages:
               TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
               # ARM_ACCESS_KEY: $(ARM_ACCESS_KEY)
 
-          #--------------------------------------------#  
-          # Run Terraform Validate
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-            displayName: 'Terraform validate'
-            inputs:
-              provider: 'azurerm'
-              command: 'validate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+          # #--------------------------------------------#  
+          # # Run Terraform Validate
+          # - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          #   displayName: 'Terraform validate'
+          #   inputs:
+          #     provider: 'azurerm'
+          #     command: 'validate'
+          #     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
 
-          #--------------------------------------------#  
-          # Download SSH private key (if needed for VM access)
-          - task: DownloadSecureFile@1
-            name: sshKey
-            displayName: 'Download SSH Key'
-            inputs:
-              secureFile: 'id_rsa'
+          # #--------------------------------------------#  
+          # # Download SSH private key (if needed for VM access)
+          # - task: DownloadSecureFile@1
+          #   name: sshKey
+          #   displayName: 'Download SSH Key'
+          #   inputs:
+          #     secureFile: 'id_rsa'
 
-          #--------------------------------------------#  
-          # Install SSH key on the agent (only if you need to SSH into VM from pipeline)
-          - task: InstallSSHKey@0
-            displayName: 'Install SSH key for VM access'
-            inputs:
-              knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
-              sshPublicKey: '$(SSH_PUBLIC_KEY)'
-              sshKeySecureFile: 'id_rsa'
+          # #--------------------------------------------#  
+          # # Install SSH key on the agent (only if you need to SSH into VM from pipeline)
+          # - task: InstallSSHKey@0
+          #   displayName: 'Install SSH key for VM access'
+          #   inputs:
+          #     knownHostsEntry: '$(KNOWN_HOSTS_STRING)'
+          #     sshPublicKey: '$(SSH_PUBLIC_KEY)'
+          #     sshKeySecureFile: 'id_rsa'
 
-          #--------------------------------------------#  
-          # Run Terraform Plan
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-            displayName: 'Terraform plan'
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-              environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
-              # commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)"'
-            env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
+          # #--------------------------------------------#  
+          # # Run Terraform Plan
+          # - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          #   displayName: 'Terraform plan'
+          #   inputs:
+          #     provider: 'azurerm'
+          #     command: 'plan'
+          #     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+          #     environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+          #     # commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)"'
+          #   env:
+          #     ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+          #     ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+          #     ARM_TENANT_ID: $(ARM_TENANT_ID)
+          #     ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+          #     TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
           
-          #--------------------------------------------#  
-          # Run Terraform Apply
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-            displayName: 'Terraform apply'
-            inputs:
-              provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-              environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
-              # commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)" -auto-approve'
-            env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
+          # #--------------------------------------------#  
+          # # Run Terraform Apply
+          # - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          #   displayName: 'Terraform apply'
+          #   inputs:
+          #     provider: 'azurerm'
+          #     command: 'apply'
+          #     workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
+          #     environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
+          #     # commandOptions: '-var="ssh_public_key_content=$(SSH_PUBLIC_KEY)" -auto-approve'
+          #   env:
+          #     ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+          #     ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+          #     ARM_TENANT_ID: $(ARM_TENANT_ID)
+          #     ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+          #     TF_VAR_ssh_public_key: $(SSH_PUBLIC_KEY)
 
     # ToDo: Change the workingDirectory path, as applicable to you
     # Destroy the resources in Azure by running a separate pipeline. 
