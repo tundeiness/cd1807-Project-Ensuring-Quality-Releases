@@ -17,6 +17,9 @@ variables:
     value: $(System.DefaultWorkingDirectory)
   - name: environmentName
     value: 'test'
+  - name: webAppName 
+    value: 'udacityApp-AppService-app-2158f50c'
+
 
 stages:
   #--------------------------------------------#  
@@ -318,12 +321,235 @@ stages:
 #       displayName: 'Upload Package'
 #       artifact: drop-perftests
 
-# #--------------------------------------------#  
-# # DEPLOYMENT STAGE
-# #--------------------------------------------#    
-# - stage: Deploy
-#   jobs:
-#   #--------------------------------------------#  
+
+
+# --------------------------------------------#  
+  # DEPLOYMENT STAGE
+  #--------------------------------------------#    
+  - stage: Deploy
+    displayName: 'Deployment Stage'
+    jobs:
+      #--------------------------------------------#  
+      # Deploy FakeRestAPI to Azure Web App
+      #--------------------------------------------#
+      - deployment: DeployFakeRestAPI
+        displayName: 'Deploy FakeRestAPI Web App'
+        pool: myAgentPool
+        environment: $(environmentName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop-fakerestapi
+                  displayName: 'Download FakeRestAPI Artifact'
+
+
+                - task: AzureWebApp@1
+                  displayName: 'Deploy FakeRestAPI to Azure Web App'
+                  inputs:
+                    azureSubscription: '$(azureServiceConnectionId)'
+                    appName: '$(webAppName)'
+                    appType: 'webApp'
+                    package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'
+                    deploymentMethod: 'zipDeploy'
+
+
+#--------------------------------------------#  
+      # Run JMeter Performance Tests
+      #--------------------------------------------#
+      - deployment: RunJMeterTests
+        displayName: 'Execute JMeter Performance Tests'
+        pool: 'myAgentPool'
+        environment: $(environmentName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop-perftests
+                  displayName: 'Download JMeter Test Suite'
+                
+                #--------------------------------------------#
+                # Install JMeter
+                #--------------------------------------------#
+                - task: Bash@3
+                  displayName: 'Install Apache JMeter'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Download and install JMeter
+                      wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.5.tgz
+                      tar -xzf apache-jmeter-5.5.tgz
+                      echo "JMeter installed successfully"
+                    workingDirectory: '$(Pipeline.Workspace)'
+                
+                #--------------------------------------------#
+                # Run JMeter Stress Test
+                #--------------------------------------------#
+                - task: Bash@3
+                  displayName: 'Run JMeter Stress Test Suite'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Unzip test suite
+                      unzip -o $(Build.BuildId)-perftests.zip
+                      
+                      # Run Stress Test
+                      ../apache-jmeter-5.5/bin/jmeter -n \
+                        -t StressTestSuite.jmx \
+                        -l stress-test-results.jtl \
+                        -j stress-test.log \
+                        -e -o stress-test-report
+                      
+                      echo "Stress Test Summary:"
+                      cat stress-test.log | grep "summary"
+                      
+                      # Archive results
+                      tar -czf $(Build.ArtifactStagingDirectory)/stress-test-report.tar.gz stress-test-report/
+                    workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
+                
+                #--------------------------------------------#
+                # Run JMeter Endurance Test
+                #--------------------------------------------#
+                - task: Bash@3
+                  displayName: 'Run JMeter Endurance Test Suite'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Run Endurance Test
+                      ../apache-jmeter-5.5/bin/jmeter -n \
+                        -t EnduranceTestSuite.jmx \
+                        -l endurance-test-results.jtl \
+                        -j endurance-test.log \
+                        -e -o endurance-test-report
+                      
+                      echo "Endurance Test Summary:"
+                      cat endurance-test.log | grep "summary"
+                      
+                      # Archive results
+                      tar -czf $(Build.ArtifactStagingDirectory)/endurance-test-report.tar.gz endurance-test-report/
+                    workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
+                
+                #--------------------------------------------#
+                # Publish JMeter Test Results
+                #--------------------------------------------#
+                - publish: $(Build.ArtifactStagingDirectory)
+                  displayName: 'Publish JMeter HTML Reports'
+                  artifact: jmeter-reports
+
+      #--------------------------------------------#  
+      # Deploy and Run Selenium UI Tests on VM
+      #--------------------------------------------#
+      - deployment: RunSeleniumTests
+        displayName: 'Execute Selenium UI Tests on VM'
+        dependsOn: DeployFakeRestAPI
+        pool:
+          name: myAgentPool
+        environment:
+          name: $(environmentName)
+          resourceType: VirtualMachine
+          tags: selenium
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop-uitests
+                  displayName: 'Download Selenium Test Suite'
+                
+                #--------------------------------------------#
+                # Setup Selenium Environment on VM
+                #--------------------------------------------#
+                - task: Bash@3
+                  displayName: 'Setup Selenium Test Environment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      #!/bin/bash
+                      set -e
+                      
+                      echo "Starting Selenium environment setup..."
+                      
+                      # Update package lists
+                      sudo apt-get update -y
+                      
+                      # Install Python and pip
+                      sudo apt-get install -y python3-pip python3-venv
+                      
+                      # Install unzip
+                      sudo apt-get install -y unzip
+                      
+                      # Install Chromium browser
+                      sudo apt-get install -y chromium-browser chromium-chromedriver
+                      
+                      # Install Selenium
+                      pip3 install selenium
+                      
+                      # Install additional dependencies
+                      pip3 install pytest pytest-html
+                      
+                      echo "Selenium environment setup completed"
+                
+                #--------------------------------------------#
+                # Deploy and Execute Selenium Tests
+                #--------------------------------------------#
+                - task: Bash@3
+                  displayName: 'Execute Selenium UI Test Suite'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      #!/bin/bash
+                      set -e
+                      
+                      # Create app directory if it doesn't exist
+                      DIR=$HOME/app
+                      if [ ! -d "$DIR" ]; then
+                        mkdir -p $DIR
+                      fi
+                      
+                      # Copy and extract test suite
+                      cp $(Pipeline.Workspace)/drop-uitests/$(Build.BuildId)-uitests.zip $DIR/
+                      cd $DIR
+                      unzip -o $(Build.BuildId)-uitests.zip
+                      
+                      # Set up ChromeDriver path
+                      export PATH=$PATH:/usr/bin
+                      
+                      # Run Selenium tests with logging
+                      echo "======================================"
+                      echo "Starting Selenium UI Test Suite"
+                      echo "Test Start Time: $(date)"
+                      echo "======================================"
+                      
+                      python3 login.py 2>&1 | tee selenium-test.log
+                      
+                      echo "======================================"
+                      echo "Selenium UI Test Suite Completed"
+                      echo "Test End Time: $(date)"
+                      echo "======================================"
+                      
+                      # Display test results
+                      echo ""
+                      echo "Test Results Summary:"
+                      cat selenium-test.log
+                      
+                      # Copy log file to artifact staging for upload
+                      mkdir -p $(Build.ArtifactStagingDirectory)/selenium-logs
+                      cp selenium-test.log $(Build.ArtifactStagingDirectory)/selenium-logs/
+                      
+                      echo "Selenium test execution completed successfully"
+                    workingDirectory: $(Agent.HomeDirectory)
+                
+                #--------------------------------------------#
+                # Publish Selenium Test Logs
+                #--------------------------------------------#
+                - publish: $(Build.ArtifactStagingDirectory)/selenium-logs
+                  displayName: 'Publish Selenium Test Logs'
+                  artifact: selenium-logs
+                  condition: always()
+
+
 #   # Deploy FakeRestAPI Web App
 #   # ToDo: Provide <environment name> you created in your DevOps project
 #   - deployment: FakeRestAPI
