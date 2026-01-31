@@ -5,7 +5,7 @@ provider "azurerm" {
 terraform {
   backend "azurerm" {
     resource_group_name  = "Azuredevops"
-    storage_account_name = "tfstate782820281"
+    storage_account_name = "tfstate571125123"
     container_name       = "tfstate"
     key                  = "test.terraform.tfstate"
   }
