@@ -17,7 +17,7 @@ variables:
   - name: environmentName
     value: 'test'
   # - name: webAppName
-  #   value: 'udacityApp-AppService-app-2158f50c'
+  #   value: 'Udacity-app-ef2c74b8'
 
 stages:
   #--------------------------------------------#
