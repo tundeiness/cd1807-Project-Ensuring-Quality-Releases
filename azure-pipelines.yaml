@@ -17,7 +17,7 @@ variables:
   - name: environmentName
     value: 'test'
   # - name: webAppName
-  #   value: 'Udacity-app-ef2c74b8'
+  #   value: 'Udacity-app-47e39b64'
 
 stages:
   #--------------------------------------------#
@@ -42,7 +42,7 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
               backendServiceArm: '$(azureServiceConnectionId)'
               backendAzureRmResourceGroupName: 'Azuredevops'
-              backendAzureRmStorageAccountName: 'tfstate571125123'
+              backendAzureRmStorageAccountName: 'tfstate2746313279'
               backendAzureRmContainerName: 'tfstate'
               backendAzureRmKey: 'test.terraform.tfstate'
             env:
