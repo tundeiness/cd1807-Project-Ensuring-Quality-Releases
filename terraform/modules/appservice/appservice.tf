@@ -3,16 +3,16 @@ resource "random_id" "unique" {
 }
 
 resource "azurerm_service_plan" "test" {
-  name                = "${var.application_type}-${var.resource_type}-plan-${random_id.unique.hex}"
-  location            = "East US 2"  # Use same location variable
+  name                = "${var.application_type}-plan-${random_id.unique.hex}"
+  location            = "Central US"  # Use same location variable
   resource_group_name = var.resource_group
   os_type             = "Windows" # "Linux"
   sku_name            = "F1"
 }
 
 resource "azurerm_linux_web_app" "test" {
-  name                = "${var.application_type}-${var.resource_type}-app-${random_id.unique.hex}"
-  location            = "East US 2"  # same location as Service Plan
+  name                = "${var.application_type}-app-${random_id.unique.hex}"
+  location            = "Central US"  # same location as Service Plan
   resource_group_name = var.resource_group
   service_plan_id     = azurerm_service_plan.test.id
 

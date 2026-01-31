@@ -3,7 +3,7 @@
 # Resource Group/Location
 location = "East US"
 resource_group = "Azuredevops"
-application_type = "udacityApp"
+application_type = "Udacity"
 
 # Network
 virtual_network_name = "virtualNet-001"

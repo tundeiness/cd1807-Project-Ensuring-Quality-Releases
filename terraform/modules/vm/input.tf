@@ -33,10 +33,6 @@ variable "public_ip_address_id" {
   type = string
 }
 
-# variable "admin_username" {
-#   type    = string
-#   # default = "azureuser"
-# }
 
 variable "vm_size" {
   type    = string
