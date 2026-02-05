@@ -1,7 +1,7 @@
 
 
 # Resource Group/Location
-location = "West Europe"
+location = "East US"
 resource_group = "Azuredevops"
 application_type = "Udacity"
 
