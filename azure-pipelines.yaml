@@ -71,9 +71,8 @@ stages:
               secureFile: 'id_rsa.pub'
 
           - script: |
-              content=$(cat $(sshPubKey.secureFilePath))
-              echo "##vso[task.setvariable variable=sshPubKeyContent]$content"
-            displayName: 'Read SSH Public Key Content'
+              cp $(sshPubKey.secureFilePath) $(System.DefaultWorkingDirectory)/terraform/environments/test/id_rsa.pub
+            displayName: 'Copy SSH Public Key to Terraform dir'
 
           - task: InstallSSHKey@0
             displayName: 'Install SSH Key for VM Access'
@@ -94,7 +93,6 @@ stages:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              TF_VAR_ssh_public_key: $(sshPubKeyContent)
 
           - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
             displayName: 'Terraform apply'
@@ -108,7 +106,6 @@ stages:
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              TF_VAR_ssh_public_key: $(sshPubKeyContent)
 
       - job: PostmanTests
         displayName: Postman | API Tests
