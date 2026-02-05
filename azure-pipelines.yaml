@@ -51,13 +51,6 @@ stages:
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-            displayName: 'Terraform validate'
-            inputs:
-              provider: 'azurerm'
-              command: 'validate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-
           - task: DownloadSecureFile@1
             name: sshKey
             displayName: 'Download SSH Private Key'
@@ -71,8 +64,27 @@ stages:
               secureFile: 'id_rsa.pub'
 
           - script: |
-              cp $(sshPubKey.secureFilePath) $(System.DefaultWorkingDirectory)/terraform/environments/test/id_rsa.pub
-            displayName: 'Copy SSH Public Key to Terraform dir'
+              echo "Working dir contents:"
+              ls -la $(System.DefaultWorkingDirectory)/terraform/
+              echo "---"
+              ls -la $(System.DefaultWorkingDirectory)/terraform/modules/vm/
+              echo "---"
+              echo "Secure file path: $(sshPubKey.secureFilePath)"
+              cat $(sshPubKey.secureFilePath) | head -c 40
+            displayName: 'Debug paths and key'
+
+          - script: |
+              cp $(sshPubKey.secureFilePath) $(System.DefaultWorkingDirectory)/terraform/modules/vm/id_rsa.pub
+              echo "Copied. Verifying:"
+              ls -la $(System.DefaultWorkingDirectory)/terraform/modules/vm/id_rsa.pub
+            displayName: 'Copy SSH Public Key to VM module dir'
+
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+            displayName: 'Terraform validate'
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
 
           - task: InstallSSHKey@0
             displayName: 'Install SSH Key for VM Access'
