@@ -16,8 +16,8 @@ variables:
     value: $(System.DefaultWorkingDirectory)
   - name: environmentName
     value: 'test'
-  # - name: webAppName
-  #   value: 'Udacity-app-3bb41105'
+  - name: webAppName
+    value: 'Udacity-app-3bb41105'
 
 stages:
   #--------------------------------------------#
@@ -63,29 +63,6 @@ stages:
             inputs:
               secureFile: 'id_rsa.pub'
 
-          - script: |
-              echo "Working dir contents:"
-              ls -la $(System.DefaultWorkingDirectory)/terraform/
-              echo "---"
-              ls -la $(System.DefaultWorkingDirectory)/terraform/modules/vm/
-              echo "---"
-              echo "Secure file path: $(sshPubKey.secureFilePath)"
-              cat $(sshPubKey.secureFilePath) | head -c 40
-            displayName: 'Debug paths and key'
-
-          - script: |
-              cp $(sshPubKey.secureFilePath) $(System.DefaultWorkingDirectory)/terraform/modules/vm/id_rsa.pub
-              echo "Copied. Verifying:"
-              ls -la $(System.DefaultWorkingDirectory)/terraform/modules/vm/id_rsa.pub
-            displayName: 'Copy SSH Public Key to VM module dir'
-
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
-            displayName: 'Terraform validate'
-            inputs:
-              provider: 'azurerm'
-              command: 'validate'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-
           - task: InstallSSHKey@0
             displayName: 'Install SSH Key for VM Access'
             inputs:
@@ -93,26 +70,41 @@ stages:
               sshPublicKey: '$(SSH_PUBLIC_KEY)'
               sshKeySecureFile: 'id_rsa'
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          - script: |
+              cd $(System.DefaultWorkingDirectory)/terraform/environments/test
+              terraform validate
+            displayName: 'Terraform validate'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              TF_VAR_ssh_public_key: $(cat $(sshPubKey.secureFilePath))
+
+          - script: |
+              export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              export ARM_TENANT_ID=$(ARM_TENANT_ID)
+              export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
+              cd $(System.DefaultWorkingDirectory)/terraform/environments/test
+              SSH_KEY=$(cat $(sshPubKey.secureFilePath))
+              terraform plan -detailed-exitcode -var="ssh_public_key=$SSH_KEY"
             displayName: 'Terraform plan'
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-              environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
             env:
               ARM_CLIENT_ID: $(ARM_CLIENT_ID)
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTaskV3@3
+          - script: |
+              export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
+              export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+              export ARM_TENANT_ID=$(ARM_TENANT_ID)
+              export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
+              cd $(System.DefaultWorkingDirectory)/terraform/environments/test
+              SSH_KEY=$(cat $(sshPubKey.secureFilePath))
+              terraform apply -auto-approve -var="ssh_public_key=$SSH_KEY"
             displayName: 'Terraform apply'
-            inputs:
-              provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-              environmentServiceNameAzureRM: '$(azureServiceConnectionId)'
             env:
               ARM_CLIENT_ID: $(ARM_CLIENT_ID)
               ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
