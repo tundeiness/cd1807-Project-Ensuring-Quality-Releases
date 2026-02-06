@@ -201,12 +201,23 @@ stages:
               npm install -g newman
             displayName: 'Install Newman'
 
+          # Optional: normalize the collection variable name to be consistent (baseUrl)
+          - script: |
+              set -e
+              cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
+              sed -i 's/{{baseurl}}/{{baseUrl}}/g' TestSuite.Regression.json
+              sed -i 's/{{baseurl}}/{{baseUrl}}/g' TestSuite.Data-Validation.json
+            displayName: 'Normalize baseurl variable name (baseUrl)'
+
           - script: |
               set -e
               cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
 
+              HOST="udacity-app-3bb41105.azurewebsites.net"
+
               newman run TestSuite.Regression.json \
-                --env-var "baseurl=udacity-app-3bb41105.azurewebsites.net" \
+                --env-var "baseUrl=https://$HOST" \
+                --env-var "baseurl=https://$HOST" \
                 --env-var "protocol=https" \
                 --reporters cli,junit \
                 --reporter-junit-export result-Regression.xml
@@ -216,8 +227,11 @@ stages:
               set -e
               cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
 
+              HOST="udacity-app-3bb41105.azurewebsites.net"
+
               newman run TestSuite.Data-Validation.json \
-                --env-var "baseurl=udacity-app-3bb41105.azurewebsites.net" \
+                --env-var "baseUrl=https://$HOST" \
+                --env-var "baseurl=https://$HOST" \
                 --env-var "protocol=https" \
                 --reporters cli,junit \
                 --reporter-junit-export result-DataValidation.xml
@@ -242,6 +256,7 @@ stages:
               failTaskOnFailedTests: false
               testRunTitle: 'API Data Validation Tests'
               publishRunAttachments: true
+
 
       - deployment: RunJMeterTests
         displayName: Test | JMeter Performance
