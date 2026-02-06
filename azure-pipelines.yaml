@@ -118,18 +118,6 @@ stages:
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
-          - task: Bash@3
-            name: TFOutputs
-            displayName: 'Terraform output (App hostname)'
-            inputs:
-              targetType: 'inline'
-              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform/environments/test'
-              script: |
-                set -euo pipefail
-                HOSTNAME=$(terraform output -raw app_service_default_hostname)
-                echo "Terraform says hostname=$HOSTNAME"
-                # Make this available to other stages/jobs:
-                echo "##vso[task.setvariable variable=APP_HOSTNAME;isOutput=true]$HOSTNAME"
 
       - job: ArchiveArtifacts
         displayName: Archive | Publish Build Artifacts
@@ -275,11 +263,6 @@ stages:
         pool:
           name: myAgentPool
         environment: $(environmentName)
-
-        # Import Build-stage output variable APP_HOSTNAME into this deployment:
-        variables:
-          APP_HOSTNAME: $[ stageDependencies.Build.BuildInfrastructure.outputs['TFOutputs.APP_HOSTNAME'] ]
-
         strategy:
           runOnce:
             deploy:
@@ -358,6 +341,7 @@ stages:
                       fi
                       echo "Using JMX_FILE=$JMX_FILE"
 
+                      # Repair: extract first valid JMeter XML doc if file got prefixed/concatenated
                       python3 - <<'PY' "$JMX_FILE"
                       import pathlib, sys
                       path = pathlib.Path(sys.argv[1])
@@ -381,8 +365,8 @@ stages:
                       mkdir -p "$OUT_DIR"
                       rm -rf "$REPORT_DIR"
 
-                      # Host only (no https://) - NOW FROM TF OUTPUT
-                      APPSERVICE_HOST="$(APP_HOSTNAME)"
+                      # Host only (no https://)
+                      APPSERVICE_HOST="$(webAppName).azurewebsites.net"
                       echo "Using APPSERVICEURL(host)=$APPSERVICE_HOST"
 
                       "$JMETER" -n \
@@ -436,6 +420,7 @@ stages:
                       fi
                       echo "Using JMX_FILE=$JMX_FILE"
 
+                      # Repair: extract first valid JMeter XML doc if file got prefixed/concatenated
                       python3 - <<'PY' "$JMX_FILE"
                       import pathlib, sys
                       path = pathlib.Path(sys.argv[1])
@@ -459,10 +444,12 @@ stages:
                       mkdir -p "$OUT_DIR"
                       rm -rf "$REPORT_DIR"
 
-                      # Host only (no https://) - NOW FROM TF OUTPUT
-                      APPSERVICE_HOST="$(APP_HOSTNAME)"
+                      # Host only (no https://)
+                      APPSERVICE_HOST="$(webAppName).azurewebsites.net"
                       echo "Using APPSERVICEURL(host)=$APPSERVICE_HOST"
 
+                      # If your rewritten EnduranceTestSuite.jmx uses -JHOST/-JTHREADS etc, these help it pass on small tiers.
+                      # If it doesn't, they are harmless (ignored unless referenced in the JMX).
                       "$JMETER" -n \
                         -t "$JMX_FILE" \
                         -JAPPSERVICEURL="$APPSERVICE_HOST" \
@@ -489,6 +476,8 @@ stages:
                 - publish: $(Build.ArtifactStagingDirectory)
                   displayName: 'Publish JMeter Reports, Logs, and JTL Results'
                   artifact: jmeter-reports
+
+
 
       - deployment: RunSeleniumTests
         displayName: Test | Selenium UI on VM
@@ -517,6 +506,9 @@ stages:
                       pip3 install --upgrade pip
                       pip3 install selenium pytest pytest-html
 
+                #--------------------------------------------
+                # Selenium: Execute tests and copy logs for publishing
+                #--------------------------------------------#
                 - task: Bash@3
                   displayName: 'Execute Selenium UI Test Suite (write VM log + copy for artifacts)'
                   inputs:
@@ -532,16 +524,19 @@ stages:
                       cd "$APP_DIR"
                       unzip -o "$(Build.BuildId)-uitests.zip"
 
+                      # Create log directory for Azure Monitor ingestion
                       sudo mkdir -p /var/log/selenium
                       sudo chown "$(id -u):$(id -g)" /var/log/selenium
                       sudo chmod 755 /var/log/selenium
 
                       LOG_VM="/var/log/selenium/selenium-test.log"
+
                       python3 login.py 2>&1 | tee -a "$LOG_VM"
 
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
                       cp "$LOG_VM" "$(Build.ArtifactStagingDirectory)/selenium-test.log"
 
+                      # Optional: Ensure UTF-8 (Azure ingestion can reject non-UTF8)
                       if command -v iconv >/dev/null 2>&1; then
                         iconv -f UTF-8 -t UTF-8 "$(Build.ArtifactStagingDirectory)/selenium-test.log" \
                           -o "$(Build.ArtifactStagingDirectory)/selenium-test.log.utf8" || true
@@ -555,3 +550,5 @@ stages:
                   displayName: 'Publish Selenium Logs'
                   artifact: selenium-logs
                   condition: always()
+
+
