@@ -160,3 +160,30 @@ stages:
           - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-perftests.zip'
             displayName: 'Publish JMeter Performance Tests Package'
             artifact: drop-perftests
+
+  #--------------------------------------------#
+  # DEPLOYMENT STAGE
+  #--------------------------------------------#
+  - stage: Deploy
+    displayName: Deploy Stage
+    dependsOn: Build
+    jobs:
+      - deployment: DeployFakeRestAPI
+        displayName: Deploy | FakeRestAPI to Web App
+        environment: $(environmentName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop-fakerestapi
+                  displayName: 'Download FakeRestAPI Artifact'
+
+                - task: AzureWebApp@1
+                  displayName: 'Deploy FakeRestAPI to Azure Web App'
+                  inputs:
+                    azureSubscription: '$(azureServiceConnectionId)'
+                    appName: '$(webAppName)'
+                    appType: 'webApp'
+                    package: '$(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip'
+                    deploymentMethod: 'zipDeploy'
