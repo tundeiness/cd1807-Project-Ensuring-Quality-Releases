@@ -205,17 +205,17 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)'
 
           - task: CmdLine@2
-            displayName: 'Debug Postman files'
+            displayName: 'Check collection variables'
             inputs:
               script: |
-                echo "Files in postman directory:"
-                ls -la
+                echo "All variables in Regression:"
+                grep -o '{{[^}]*}}' TestSuite.Regression.json | sort -u
                 echo "---"
-                echo "Environment file contents:"
-                cat udacityproject.postman_environment.json
+                echo "URL fields in Regression:"
+                grep -i '"url"' TestSuite.Regression.json | head -10
                 echo "---"
-                echo "Testing API connectivity:"
-                curl -sv https://Udacity-app-3bb41105.azurewebsites.net/api/Activities 2>&1 | head -20
+                echo "Raw host fields:"
+                grep -i '"host"' TestSuite.Regression.json | head -10
               workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
 
           - task: CmdLine@2
@@ -223,6 +223,7 @@ stages:
             inputs:
               script: |
                 newman run TestSuite.Regression.json \
+                  --global-var "baseurl=https://Udacity-app-3bb41105.azurewebsites.net" \
                   --env-var "baseurl=https://Udacity-app-3bb41105.azurewebsites.net" \
                   --reporters cli,junit \
                   --reporter-junit-export result-Regression.xml
@@ -233,6 +234,7 @@ stages:
             inputs:
               script: |
                 newman run TestSuite.Data-Validation.json \
+                  --global-var "baseurl=https://Udacity-app-3bb41105.azurewebsites.net" \
                   --env-var "baseurl=https://Udacity-app-3bb41105.azurewebsites.net" \
                   --reporters cli,junit \
                   --reporter-junit-export result-DataValidation.xml
