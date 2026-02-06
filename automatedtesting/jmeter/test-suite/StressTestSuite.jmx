@@ -70,7 +70,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="APPSERVICEURL" elementType="Argument">
             <stringProp name="Argument.name">APPSERVICEURL</stringProp>
-            <stringProp name="Argument.value">udacityapp-appservice-app-2158f50c.azurewebsites.net</stringProp>
+            <stringProp name="Argument.value">udacity-app-3bb41105.azurewebsites.net</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -117,7 +117,7 @@
           </elementProp>
 
           <!-- Allow pipeline override with -JAPPSERVICEURL=... -->
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacityapp-appservice-app-2158f50c.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Authors</stringProp>
@@ -139,7 +139,7 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacityapp-appservice-app-2158f50c.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Activities</stringProp>
@@ -161,7 +161,7 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacityapp-appservice-app-2158f50c.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net/)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Books</stringProp>
