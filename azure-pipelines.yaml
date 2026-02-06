@@ -197,36 +197,31 @@ stages:
             inputs:
               versionSpec: '16.x'
 
-          - task: CmdLine@2
+          - script: |
+              npm install -g newman
             displayName: 'Install Newman'
-            inputs:
-              script: |
-                npm install -g newman
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
 
+          - script: |
+              set -e
+              cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
 
-          - task: CmdLine@2
+              newman run TestSuite.Regression.json \
+                --env-var "baseurl=udacity-app-3bb41105.azurewebsites.net" \
+                --env-var "protocol=https" \
+                --reporters cli,junit \
+                --reporter-junit-export result-Regression.xml
             displayName: 'Run Regression Tests'
-            inputs:
-              script: |
-                newman run TestSuite.Regression.json \
-                  --env-var "baseurl=udacity-app-3bb41105.azurewebsites.net" \
-                  --env-var "protocol=https" \
-                  --reporters cli,junit \
-                  --reporter-junit-export result-Regression.xml
-            workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
 
-          - task: CmdLine@2
+          - script: |
+              set -e
+              cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
+
+              newman run TestSuite.Data-Validation.json \
+                --env-var "baseurl=udacity-app-3bb41105.azurewebsites.net" \
+                --env-var "protocol=https" \
+                --reporters cli,junit \
+                --reporter-junit-export result-DataValidation.xml
             displayName: 'Run Data Validation Tests'
-            inputs:
-              script: |
-                newman run TestSuite.Data-Validation.json \
-                  --env-var "baseurl=udacity-app-3bb41105.azurewebsites.net" \
-                  --env-var "protocol=https" \
-                  --reporters cli,junit \
-                  --reporter-junit-export result-DataValidation.xml
-            workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-
 
           - task: PublishTestResults@2
             displayName: 'Publish Postman Regression Results'
@@ -266,7 +261,6 @@ stages:
                   displayName: 'Install Java + Apache JMeter'
                   inputs:
                     targetType: 'inline'
-                    workingDirectory: '$(Pipeline.Workspace)'
                     script: |
                       set -euo pipefail
 
@@ -296,18 +290,18 @@ stages:
                   displayName: 'Run JMeter Stress Test Suite'
                   inputs:
                     targetType: 'inline'
-                    workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
                     script: |
                       set -euo pipefail
 
                       export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
                       export PATH="$JAVA_HOME/bin:$PATH"
 
+                      cd "$(Pipeline.Workspace)/drop-perftests"
+
                       TOOLS_DIR="$(Pipeline.Workspace)/tools"
                       JMETER_VERSION="5.6.3"
                       JMETER="$TOOLS_DIR/apache-jmeter-$JMETER_VERSION/bin/jmeter"
 
-                      # Find the zip, unzip into a clean folder
                       ZIP_FILE="$(ls -1 *.zip 2>/dev/null | head -n 1 || true)"
                       if [[ -z "${ZIP_FILE}" ]]; then
                         echo "No .zip found in $(pwd)"
@@ -354,16 +348,29 @@ stages:
                   displayName: 'Run JMeter Endurance Test Suite'
                   inputs:
                     targetType: 'inline'
-                    workingDirectory: '$(Pipeline.Workspace)/drop-perftests'
                     script: |
                       set -euo pipefail
 
                       export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
                       export PATH="$JAVA_HOME/bin:$PATH"
 
+                      cd "$(Pipeline.Workspace)/drop-perftests"
+
                       TOOLS_DIR="$(Pipeline.Workspace)/tools"
                       JMETER_VERSION="5.6.3"
                       JMETER="$TOOLS_DIR/apache-jmeter-$JMETER_VERSION/bin/jmeter"
+
+                      ZIP_FILE="$(ls -1 *.zip 2>/dev/null | head -n 1 || true)"
+                      if [[ -z "${ZIP_FILE}" ]]; then
+                        echo "No .zip found in $(pwd)"
+                        ls -la
+                        exit 1
+                      fi
+
+                      rm -rf perftests
+                      mkdir -p perftests
+                      unzip -o "$ZIP_FILE" -d perftests
+                      ls -la perftests
 
                       OUT_DIR="$(Build.ArtifactStagingDirectory)/jmeter/endurance"
                       JTL_FILE="$OUT_DIR/endurance-test-results.jtl"
