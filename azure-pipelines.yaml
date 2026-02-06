@@ -329,6 +329,22 @@ stages:
                       unzip -o "$ZIP_FILE" -d perftests
                       ls -la perftests
 
+                      # Guard + auto-fix: remove any XML declarations after line 1 (fixes concatenated/broken JMX)
+                      echo "=== XML header occurrences before fix ==="
+                      grep -n '<\?xml' perftests/*.jmx || true
+                      for f in perftests/*.jmx; do
+                        [[ -f "$f" ]] || continue
+                        sed -i '2,${/^[[:space:]]*<\?xml[[:space:]]/d;}' "$f"
+                      done
+                      echo "=== XML header occurrences after fix (should be 1 per file) ==="
+                      grep -n '<\?xml' perftests/*.jmx || true
+
+                      # Sanity: show first/last lines for the stress JMX
+                      echo "=== StressTestSuite.jmx first 3 lines ==="
+                      head -n 3 perftests/StressTestSuite.jmx || true
+                      echo "=== StressTestSuite.jmx last 3 lines ==="
+                      tail -n 3 perftests/StressTestSuite.jmx || true
+
                       OUT_DIR="$(Build.ArtifactStagingDirectory)/jmeter/stress"
                       JTL_FILE="$OUT_DIR/stress-test-results.jtl"
                       LOG_FILE="$OUT_DIR/stress-test.log"
@@ -338,10 +354,14 @@ stages:
                       mkdir -p "$OUT_DIR"
                       rm -rf "$REPORT_DIR"
 
+                      # IMPORTANT: pass host only (no https://) because JMX domain should be hostname only
+                      APPSERVICE_HOST="$(webAppName).azurewebsites.net"
+                      echo "Using APPSERVICEURL=$APPSERVICE_HOST"
+
                       set +e
                       "$JMETER" -n \
                         -t perftests/StressTestSuite.jmx \
-                        -JAPPSERVICEURL="https://$(webAppName).azurewebsites.net" \
+                        -JAPPSERVICEURL="$APPSERVICE_HOST" \
                         -l "$JTL_FILE" \
                         -j "$LOG_FILE" \
                         -e -o "$REPORT_DIR"
@@ -387,6 +407,21 @@ stages:
                       unzip -o "$ZIP_FILE" -d perftests
                       ls -la perftests
 
+                      # Guard + auto-fix: remove any XML declarations after line 1
+                      echo "=== XML header occurrences before fix ==="
+                      grep -n '<\?xml' perftests/*.jmx || true
+                      for f in perftests/*.jmx; do
+                        [[ -f "$f" ]] || continue
+                        sed -i '2,${/^[[:space:]]*<\?xml[[:space:]]/d;}' "$f"
+                      done
+                      echo "=== XML header occurrences after fix (should be 1 per file) ==="
+                      grep -n '<\?xml' perftests/*.jmx || true
+
+                      echo "=== EnduranceTestSuite.jmx first 3 lines ==="
+                      head -n 3 perftests/EnduranceTestSuite.jmx || true
+                      echo "=== EnduranceTestSuite.jmx last 3 lines ==="
+                      tail -n 3 perftests/EnduranceTestSuite.jmx || true
+
                       OUT_DIR="$(Build.ArtifactStagingDirectory)/jmeter/endurance"
                       JTL_FILE="$OUT_DIR/endurance-test-results.jtl"
                       LOG_FILE="$OUT_DIR/endurance-test.log"
@@ -396,10 +431,13 @@ stages:
                       mkdir -p "$OUT_DIR"
                       rm -rf "$REPORT_DIR"
 
+                      APPSERVICE_HOST="$(webAppName).azurewebsites.net"
+                      echo "Using APPSERVICEURL=$APPSERVICE_HOST"
+
                       set +e
                       "$JMETER" -n \
                         -t perftests/EnduranceTestSuite.jmx \
-                        -JAPPSERVICEURL="https://$(webAppName).azurewebsites.net" \
+                        -JAPPSERVICEURL="$APPSERVICE_HOST" \
                         -l "$JTL_FILE" \
                         -j "$LOG_FILE" \
                         -e -o "$REPORT_DIR"

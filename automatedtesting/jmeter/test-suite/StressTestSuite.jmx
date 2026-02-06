@@ -65,7 +65,6 @@
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
 
-      <!-- User Defined Variables -->
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
         <collectionProp name="Arguments.arguments">
           <elementProp name="APPSERVICEURL" elementType="Argument">
@@ -80,7 +79,6 @@
     </TestPlan>
 
     <hashTree>
-      <!-- Thread Group -->
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Stress Test" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
 
@@ -110,14 +108,12 @@
         </HeaderManager>
         <hashTree/>
 
-        <!-- GET Authors -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Authors" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <!-- Allow pipeline override with -JAPPSERVICEURL=... -->
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Authors</stringProp>
@@ -133,13 +129,12 @@
         </HTTPSamplerProxy>
         <hashTree/>
 
-        <!-- GET Activities -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Activities" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Activities</stringProp>
@@ -155,13 +150,12 @@
         </HTTPSamplerProxy>
         <hashTree/>
 
-        <!-- GET Books -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Books" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net/)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Books</stringProp>
@@ -211,7 +205,6 @@
               <connectTime>true</connectTime>
             </value>
           </objProp>
-          <!-- <stringProp name="filename">stress-results.jtl</stringProp> -->
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>

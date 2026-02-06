@@ -84,7 +84,8 @@
           <!-- Default can be overridden at runtime: -JAPPSERVICEURL=yourapp.azurewebsites.net -->
           <elementProp name="APPSERVICEURL" elementType="Argument">
             <stringProp name="Argument.name">APPSERVICEURL</stringProp>
-            <stringProp name="Argument.value">Udacity-app-3bb41105.azurewebsites.net</stringProp>
+            <!-- Hostname only (no scheme, no trailing slash) -->
+            <stringProp name="Argument.value">udacity-app-3bb41105.azurewebsites.net</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -130,8 +131,8 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <!-- Allow pipeline override with -JAPPSERVICEURL=... -->
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
+          <!-- Domain must be hostname only -->
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Authors</stringProp>
@@ -160,7 +161,7 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Activities</stringProp>
@@ -188,7 +189,7 @@
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
 
-          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,https://udacity-app-3bb41105.azurewebsites.net)}</stringProp>
+          <stringProp name="HTTPSampler.domain">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/api/Books</stringProp>
