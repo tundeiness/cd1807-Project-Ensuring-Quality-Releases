@@ -223,7 +223,7 @@ stages:
             inputs:
               script: |
                 newman run TestSuite.Regression.json \
-                  -e udacityproject.postman_environment.json \
+                  --env-var "baseurl=https://Udacity-app-3bb41105.azurewebsites.net" \
                   --reporters cli,junit \
                   --reporter-junit-export result-Regression.xml
               workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
@@ -233,7 +233,7 @@ stages:
             inputs:
               script: |
                 newman run TestSuite.Data-Validation.json \
-                  -e udacityproject.postman_environment.json \
+                  --env-var "baseurl=https://Udacity-app-3bb41105.azurewebsites.net" \
                   --reporters cli,junit \
                   --reporter-junit-export result-DataValidation.xml
               workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
@@ -280,18 +280,18 @@ stages:
                     script: |
                       set -euo pipefail
                       sudo apt-get update -y
-                      sudo apt-get install -y openjdk-17-jre-headless unzip tar wget
+                      sudo apt-get install -y openjdk-11-jre-headless unzip tar wget
                       export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
                       export PATH="$JAVA_HOME/bin:$PATH"
                       java -version
                       TOOLS_DIR="$(Pipeline.Workspace)/tools"
                       mkdir -p "$TOOLS_DIR"
                       cd "$TOOLS_DIR"
-                      if [[ ! -d apache-jmeter-5.5 ]]; then
-                        wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.5.tgz
-                        tar -xzf apache-jmeter-5.5.tgz
+                      if [[ ! -d apache-jmeter-5.6.3 ]]; then
+                        wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+                        tar -xzf apache-jmeter-5.6.3.tgz
                       fi
-                      "$TOOLS_DIR/apache-jmeter-5.5/bin/jmeter" -v
+                      "$TOOLS_DIR/apache-jmeter-5.6.3/bin/jmeter" -v
 
                 - task: Bash@3
                   displayName: 'Run JMeter Stress Test Suite'
