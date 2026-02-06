@@ -548,16 +548,7 @@ stages:
 
                       LOG_VM="/var/log/selenium/selenium-test.log"
 
-                      echo "======================================" | tee "$LOG_VM"
-                      echo "BuildId: $(Build.BuildId)"            | tee -a "$LOG_VM"
-                      echo "StartTimeUtc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" | tee -a "$LOG_VM"
-                      echo "======================================" | tee -a "$LOG_VM"
-
                       python3 login.py 2>&1 | tee -a "$LOG_VM"
-
-                      echo "======================================" | tee -a "$LOG_VM"
-                      echo "EndTimeUtc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" | tee -a "$LOG_VM"
-                      echo "======================================" | tee -a "$LOG_VM"
 
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
                       cp "$LOG_VM" "$(Build.ArtifactStagingDirectory)/selenium-test.log"
