@@ -494,3 +494,87 @@ stages:
                 - publish: $(Build.ArtifactStagingDirectory)
                   displayName: 'Publish JMeter Reports, Logs, and JTL Results'
                   artifact: jmeter-reports
+
+
+      - deployment: RunSeleniumTests
+        displayName: Test | Selenium UI on VM
+        dependsOn:
+          - DeployFakeRestAPI
+          - RunJMeterTests
+        environment: $(environmentName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: drop-uitests
+                  displayName: 'Download Selenium Test Suite'
+
+                - task: Bash@3
+                  displayName: 'Setup Selenium Test Environment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      set -euo pipefail
+                      sudo apt-get update -y
+                      sudo apt-get install -y python3-pip python3-venv unzip
+                      sudo apt-get install -y chromium-browser chromium-chromedriver || true
+                      sudo apt-get install -y chromium-driver chromium || true
+                      pip3 install --upgrade pip
+                      pip3 install selenium pytest pytest-html
+
+                #--------------------------------------------
+                # Selenium: Execute tests and copy logs for publishing
+                #--------------------------------------------#
+                - task: Bash@3
+                  displayName: 'Execute Selenium UI Test Suite (write VM log + copy for artifacts)'
+                  inputs:
+                    targetType: 'inline'
+                    workingDirectory: $(Agent.HomeDirectory)
+                    script: |
+                      set -euo pipefail
+
+                      APP_DIR="$HOME/app"
+                      mkdir -p "$APP_DIR"
+
+                      cp "$(Pipeline.Workspace)/drop-uitests/$(Build.BuildId)-uitests.zip" "$APP_DIR/"
+                      cd "$APP_DIR"
+                      unzip -o "$(Build.BuildId)-uitests.zip"
+
+                      # Create log directory for Azure Monitor ingestion
+                      sudo mkdir -p /var/log/selenium
+                      sudo chown "$(id -u):$(id -g)" /var/log/selenium
+                      sudo chmod 755 /var/log/selenium
+
+                      LOG_VM="/var/log/selenium/selenium-test.log"
+
+                      echo "======================================" | tee "$LOG_VM"
+                      echo "BuildId: $(Build.BuildId)"            | tee -a "$LOG_VM"
+                      echo "StartTimeUtc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" | tee -a "$LOG_VM"
+                      echo "======================================" | tee -a "$LOG_VM"
+
+                      python3 login.py 2>&1 | tee -a "$LOG_VM"
+
+                      echo "======================================" | tee -a "$LOG_VM"
+                      echo "EndTimeUtc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" | tee -a "$LOG_VM"
+                      echo "======================================" | tee -a "$LOG_VM"
+
+                      mkdir -p "$(Build.ArtifactStagingDirectory)"
+                      cp "$LOG_VM" "$(Build.ArtifactStagingDirectory)/selenium-test.log"
+
+                      # Optional: Ensure UTF-8 (Azure ingestion can reject non-UTF8)
+                      if command -v iconv >/dev/null 2>&1; then
+                        iconv -f UTF-8 -t UTF-8 "$(Build.ArtifactStagingDirectory)/selenium-test.log" \
+                          -o "$(Build.ArtifactStagingDirectory)/selenium-test.log.utf8" || true
+                        if [[ -s "$(Build.ArtifactStagingDirectory)/selenium-test.log.utf8" ]]; then
+                          mv "$(Build.ArtifactStagingDirectory)/selenium-test.log.utf8" \
+                             "$(Build.ArtifactStagingDirectory)/selenium-test.log"
+                        fi
+                      fi
+
+                - publish: $(Build.ArtifactStagingDirectory)/selenium-test.log
+                  displayName: 'Publish Selenium Logs'
+                  artifact: selenium-logs
+                  condition: always()
+
+
