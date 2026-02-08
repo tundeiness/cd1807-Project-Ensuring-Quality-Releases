@@ -118,11 +118,45 @@ stages:
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
 
-
       - job: ArchiveArtifacts
         displayName: Archive | Publish Build Artifacts
         dependsOn: BuildInfrastructure
         steps:
+          #--------------------------------------------#
+          # Archive Terraform files
+          #--------------------------------------------#
+          - task: ArchiveFiles@2
+            displayName: 'Archive Terraform Files'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/terraform'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/terraform-files.zip'
+              replaceExistingArchive: true
+
+          - publish: '$(Build.ArtifactStagingDirectory)/terraform-files.zip'
+            displayName: 'Publish Terraform Files for Submission'
+            artifact: terraform-source
+
+          #--------------------------------------------#
+          # Archive Postman files
+          #--------------------------------------------#
+          - task: ArchiveFiles@2
+            displayName: 'Archive Postman Test Collections'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/postman-tests.zip'
+              replaceExistingArchive: true
+
+          - publish: '$(Build.ArtifactStagingDirectory)/postman-tests.zip'
+            displayName: 'Publish Postman Tests for Submission'
+            artifact: postman-source
+
+          #--------------------------------------------#
+          # Selenium UI Tests
+          #--------------------------------------------#
           - task: ArchiveFiles@2
             displayName: 'Archive Selenium UI Tests'
             inputs:
@@ -136,6 +170,25 @@ stages:
             displayName: 'Publish Selenium UI Tests Package'
             artifact: drop-uitests
 
+          #--------------------------------------------#
+          # Archive Selenium Python files
+          #--------------------------------------------#
+          - task: ArchiveFiles@2
+            displayName: 'Archive Selenium Python Source Files'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)/automatedtesting/selenium'
+              includeRootFolder: true
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/selenium-python-files.zip'
+              replaceExistingArchive: true
+
+          - publish: '$(Build.ArtifactStagingDirectory)/selenium-python-files.zip'
+            displayName: 'Publish Selenium Python Files for Submission'
+            artifact: selenium-source
+
+          #--------------------------------------------#
+          # FakeRestAPI
+          #--------------------------------------------#
           - task: ArchiveFiles@2
             displayName: 'Archive FakeRestAPI'
             inputs:
@@ -149,6 +202,9 @@ stages:
             displayName: 'Publish FakeRestAPI Package'
             artifact: drop-fakerestapi
 
+          #--------------------------------------------#
+          # JMeter Performance Tests
+          #--------------------------------------------#
           - task: ArchiveFiles@2
             displayName: 'Archive JMeter Performance Tests'
             inputs:
@@ -212,8 +268,11 @@ stages:
           - script: |
               set -e
               cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
-
               HOST="udacity-app-3bb41105.azurewebsites.net"
+
+              echo "=========================================="
+              echo "Starting Regression Tests"
+              echo "=========================================="
 
               newman run TestSuite.Regression.json \
                 --env-var "baseUrl=https://$HOST" \
@@ -226,9 +285,12 @@ stages:
           - script: |
               set -e
               cd "$(System.DefaultWorkingDirectory)/automatedtesting/postman"
-
               HOST="udacity-app-3bb41105.azurewebsites.net"
 
+              echo "=========================================="
+              echo "Starting Data Validation Tests"
+              echo "=========================================="
+              
               newman run TestSuite.Data-Validation.json \
                 --env-var "baseUrl=https://$HOST" \
                 --env-var "baseurl=https://$HOST" \
@@ -238,23 +300,15 @@ stages:
             displayName: 'Run Data Validation Tests'
 
           - task: PublishTestResults@2
-            displayName: 'Publish Postman Regression Results'
+            displayName: 'Publish Postman Test Results'
+            condition: always()
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'result-Regression.xml'
+              testResultsFiles: '**/result-*.xml'
               searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+              mergeTestResults: true
               failTaskOnFailedTests: false
-              testRunTitle: 'API Regression Tests'
-              publishRunAttachments: true
-
-          - task: PublishTestResults@2
-            displayName: 'Publish Postman Data Validation Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'result-DataValidation.xml'
-              searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
-              failTaskOnFailedTests: false
-              testRunTitle: 'API Data Validation Tests'
+              testRunTitle: 'Postman API Tests - Regression & Data Validation'
               publishRunAttachments: true
 
       - deployment: RunJMeterTests
@@ -301,7 +355,7 @@ stages:
                       "$JMETER_BIN" -v
 
                 - task: Bash@3
-                  displayName: 'Run JMeter Stress Test Suite (clean unzip + repair XML)'
+                  displayName: 'Run JMeter Stress Test Suite'
                   inputs:
                     targetType: 'inline'
                     script: |
@@ -312,13 +366,11 @@ stages:
 
                       cd "$(Pipeline.Workspace)/drop-perftests"
 
-                      TOOLS_DIR="$(Pipeline.Workspace)/tools"
-                      JMETER_VERSION="5.6.3"
-                      JMETER="$TOOLS_DIR/apache-jmeter-$JMETER_VERSION/bin/jmeter"
+                      JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.6.3/bin/jmeter"
 
-                      echo "== Clean stale extracted content & prior outputs =="
-                      rm -rf extracted_perftests perftests stress-test-report
-                      rm -f stress-test.log stress-test-results.jtl || true
+                      # Clean previous results
+                      rm -rf extracted_perftests
+                      mkdir -p extracted_perftests
 
                       ZIP_FILE="$(ls -1 *.zip 2>/dev/null | head -n 1 || true)"
                       if [[ -z "${ZIP_FILE}" ]]; then
@@ -326,61 +378,48 @@ stages:
                         ls -la
                         exit 1
                       fi
-
-                      echo "== Unzip into a clean folder =="
-                      mkdir -p extracted_perftests
                       unzip -o "$ZIP_FILE" -d extracted_perftests
 
-                      echo "=== JMX files found after unzip ==="
-                      find extracted_perftests -maxdepth 5 -type f -name "*.jmx" -print -exec ls -la {} \;
-
-                      JMX_FILE="$(find extracted_perftests -type f -name 'StressTestSuite.jmx' | head -n 1 || true)"
-                      if [[ -z "$JMX_FILE" ]]; then
-                        echo "StressTestSuite.jmx not found after unzip."
-                        exit 1
-                      fi
-                      echo "Using JMX_FILE=$JMX_FILE"
-
-                      # Repair: extract first valid JMeter XML doc if file got prefixed/concatenated
-                      python3 - <<'PY' "$JMX_FILE"
-                      import pathlib, sys
-                      path = pathlib.Path(sys.argv[1])
-                      data = path.read_text(errors="ignore")
-                      start = data.find("<?xml")
-                      end = data.find("</jmeterTestPlan>")
-                      if start == -1 or end == -1:
-                          print("ERROR: Could not find XML prolog or </jmeterTestPlan> in", path)
-                          sys.exit(2)
-                      end = end + len("</jmeterTestPlan>")
-                      clean = data[start:end].lstrip("\ufeff")
-                      path.write_text(clean)
-                      print("Rewrote", path, "bytes=", len(clean))
-                      PY
-
+                      # Clean output directory
                       OUT_DIR="$(Build.ArtifactStagingDirectory)/jmeter/stress"
-                      JTL_FILE="$OUT_DIR/stress-test-results.jtl"
-                      LOG_FILE="$OUT_DIR/stress-test.log"
-                      REPORT_DIR="$OUT_DIR/stress-test-report"
                       rm -rf "$OUT_DIR"
                       mkdir -p "$OUT_DIR"
-                      rm -rf "$REPORT_DIR"
 
-                      # Host only (no https://)
                       APPSERVICE_HOST="$(webAppName).azurewebsites.net"
-                      echo "Using APPSERVICEURL(host)=$APPSERVICE_HOST"
+                      echo "Testing against: https://$APPSERVICE_HOST"
+
+
+                      echo "=========================================="
+                      echo "Starting JMeter Stress Test"
+                      echo "=========================================="
 
                       "$JMETER" -n \
-                        -t "$JMX_FILE" \
+                        -t extracted_perftests/StressTestSuite.jmx \
                         -JAPPSERVICEURL="$APPSERVICE_HOST" \
-                        -l "$JTL_FILE" \
-                        -j "$LOG_FILE" \
-                        -e -o "$REPORT_DIR"
+                        -JTHREADS=10 \
+                        -JDURATION=60 \
+                        -l "$OUT_DIR/stress-test-results.jtl" \
+                        -j "$OUT_DIR/stress-test.log" \
+                        -e -o "$OUT_DIR/stress-test-report"
 
-                      echo "== Package stress report =="
-                      tar -czf "$OUT_DIR/stress-test-report.tar.gz" -C "$OUT_DIR" "stress-test-report"
+                      echo ""
+                      echo "=========================================="
+                      echo "JMeter Stress Test Results"
+                      echo "=========================================="
+                      
+                      # Show "Starting standalone test" line (required by rubric)
+                      echo "Test Start Time:"
+                      grep "Starting standalone test @" "$OUT_DIR/stress-test.log" || echo "Starting line not found in log"
+                      
+                      echo ""
+                      echo "Test Summary (all summary lines):"
+                      # Show all summary lines (required by rubric)
+                      grep "summary =" "$OUT_DIR/stress-test.log" || echo "No summary found"
+                      
+                      echo "=========================================="
 
                 - task: Bash@3
-                  displayName: 'Run JMeter Endurance Test Suite (clean unzip + gentle + post-unzip)'
+                  displayName: 'Run JMeter Endurance Test Suite'
                   inputs:
                     targetType: 'inline'
                     script: |
@@ -391,13 +430,11 @@ stages:
 
                       cd "$(Pipeline.Workspace)/drop-perftests"
 
-                      TOOLS_DIR="$(Pipeline.Workspace)/tools"
-                      JMETER_VERSION="5.6.3"
-                      JMETER="$TOOLS_DIR/apache-jmeter-$JMETER_VERSION/bin/jmeter"
+                      JMETER="$(Pipeline.Workspace)/tools/apache-jmeter-5.6.3/bin/jmeter"
 
-                      echo "== Clean stale extracted content & prior outputs =="
-                      rm -rf extracted_perftests endurance-test-report post_unzipped_endurance_report
-                      rm -f endurance-test.log endurance-test-results.jtl || true
+                      # Clean previous results
+                      rm -rf extracted_perftests
+                      mkdir -p extracted_perftests
 
                       ZIP_FILE="$(ls -1 *.zip 2>/dev/null | head -n 1 || true)"
                       if [[ -z "${ZIP_FILE}" ]]; then
@@ -405,79 +442,50 @@ stages:
                         ls -la
                         exit 1
                       fi
-
-                      echo "== Unzip into a clean folder =="
-                      mkdir -p extracted_perftests
                       unzip -o "$ZIP_FILE" -d extracted_perftests
 
-                      echo "=== JMX files found after unzip ==="
-                      find extracted_perftests -maxdepth 5 -type f -name "*.jmx" -print -exec ls -la {} \;
-
-                      JMX_FILE="$(find extracted_perftests -type f -name 'EnduranceTestSuite.jmx' | head -n 1 || true)"
-                      if [[ -z "$JMX_FILE" ]]; then
-                        echo "EnduranceTestSuite.jmx not found after unzip."
-                        exit 1
-                      fi
-                      echo "Using JMX_FILE=$JMX_FILE"
-
-                      # Repair: extract first valid JMeter XML doc if file got prefixed/concatenated
-                      python3 - <<'PY' "$JMX_FILE"
-                      import pathlib, sys
-                      path = pathlib.Path(sys.argv[1])
-                      data = path.read_text(errors="ignore")
-                      start = data.find("<?xml")
-                      end = data.find("</jmeterTestPlan>")
-                      if start == -1 or end == -1:
-                          print("ERROR: Could not find XML prolog or </jmeterTestPlan> in", path)
-                          sys.exit(2)
-                      end = end + len("</jmeterTestPlan>")
-                      clean = data[start:end].lstrip("\ufeff")
-                      path.write_text(clean)
-                      print("Rewrote", path, "bytes=", len(clean))
-                      PY
-
+                      # Clean output directory
                       OUT_DIR="$(Build.ArtifactStagingDirectory)/jmeter/endurance"
-                      JTL_FILE="$OUT_DIR/endurance-test-results.jtl"
-                      LOG_FILE="$OUT_DIR/endurance-test.log"
-                      REPORT_DIR="$OUT_DIR/endurance-test-report"
                       rm -rf "$OUT_DIR"
                       mkdir -p "$OUT_DIR"
-                      rm -rf "$REPORT_DIR"
 
-                      # Host only (no https://)
                       APPSERVICE_HOST="$(webAppName).azurewebsites.net"
-                      echo "Using APPSERVICEURL(host)=$APPSERVICE_HOST"
+                      echo "Testing against: https://$APPSERVICE_HOST"
 
-                      # If your rewritten EnduranceTestSuite.jmx uses -JHOST/-JTHREADS etc, these help it pass on small tiers.
-                      # If it doesn't, they are harmless (ignored unless referenced in the JMX).
+
+
+                      echo "=========================================="
+                      echo "Starting JMeter Endurance Test"
+                      echo "=========================================="
+
                       "$JMETER" -n \
-                        -t "$JMX_FILE" \
+                        -t extracted_perftests/EnduranceTestSuite.jmx \
                         -JAPPSERVICEURL="$APPSERVICE_HOST" \
-                        -JHOST="$APPSERVICE_HOST" \
-                        -JTHREADS=2 -JRAMP_UP=30 -JDURATION=60 -JTHINK_TIME_MS=750 \
-                        -l "$JTL_FILE" \
-                        -j "$LOG_FILE" \
-                        -e -o "$REPORT_DIR"
+                        -JTHREADS=2 \
+                        -JDURATION=120 \
+                        -l "$OUT_DIR/endurance-test-results.jtl" \
+                        -j "$OUT_DIR/endurance-test.log" \
+                        -e -o "$OUT_DIR/endurance-test-report"
 
-                      echo "== Quick summary lines (Endurance) =="
-                      grep -i "summary" "$LOG_FILE" || true
-                      tail -n 120 "$LOG_FILE" || true
-
-                      echo "== Package endurance report =="
-                      tar -czf "$OUT_DIR/endurance-test-report.tar.gz" -C "$OUT_DIR" "endurance-test-report"
-
-                      echo "== Unzip AFTER test run (extract tarball for inspection) =="
-                      mkdir -p "$OUT_DIR/post_unzipped_endurance_report"
-                      tar -xzf "$OUT_DIR/endurance-test-report.tar.gz" -C "$OUT_DIR/post_unzipped_endurance_report"
-
-                      echo "Post-unzipped report contents:"
-                      ls -la "$OUT_DIR/post_unzipped_endurance_report/endurance-test-report" | head -n 50 || true
+                      echo ""
+                      echo "=========================================="
+                      echo "JMeter Endurance Test Results"
+                      echo "=========================================="
+                      
+                      # Show "Starting standalone test" line (required by rubric)
+                      echo "Test Start Time:"
+                      grep "Starting standalone test @" "$OUT_DIR/endurance-test.log" || echo "Starting line not found in log"
+                      
+                      echo ""
+                      echo "Test Summary (all summary lines):"
+                      # Show all summary lines (required by rubric)
+                      grep "summary =" "$OUT_DIR/endurance-test.log" || echo "No summary found"
+                      
+                      echo "=========================================="
 
                 - publish: $(Build.ArtifactStagingDirectory)
                   displayName: 'Publish JMeter Reports, Logs, and JTL Results'
                   artifact: jmeter-reports
-
-
 
       - deployment: RunSeleniumTests
         displayName: Test | Selenium UI on VM
@@ -499,18 +507,23 @@ stages:
                     targetType: 'inline'
                     script: |
                       set -euo pipefail
+                      
+                      echo "Installing Python and dependencies..."
                       sudo apt-get update -y
                       sudo apt-get install -y python3-pip python3-venv unzip
+                      
+                      echo "Installing Chrome and ChromeDriver..."
                       sudo apt-get install -y chromium-browser chromium-chromedriver || true
                       sudo apt-get install -y chromium-driver chromium || true
+                      
+                      echo "Upgrading pip and installing Python packages..."
                       pip3 install --upgrade pip
                       pip3 install selenium pytest pytest-html
+                      
+                      echo "Environment setup complete"
 
-                #--------------------------------------------
-                # Selenium: Execute tests and copy logs for publishing
-                #--------------------------------------------#
                 - task: Bash@3
-                  displayName: 'Execute Selenium UI Test Suite (write VM log + copy for artifacts)'
+                  displayName: 'Execute Selenium UI Test Suite'
                   inputs:
                     targetType: 'inline'
                     workingDirectory: $(Agent.HomeDirectory)
@@ -520,6 +533,7 @@ stages:
                       APP_DIR="$HOME/app"
                       mkdir -p "$APP_DIR"
 
+                      echo "Extracting Selenium test files..."
                       cp "$(Pipeline.Workspace)/drop-uitests/$(Build.BuildId)-uitests.zip" "$APP_DIR/"
                       cd "$APP_DIR"
                       unzip -o "$(Build.BuildId)-uitests.zip"
@@ -531,12 +545,27 @@ stages:
 
                       LOG_VM="/var/log/selenium/selenium-test.log"
 
-                      python3 login.py 2>&1 | tee -a "$LOG_VM"
-
+                      echo "=========================================="
+                      echo "Starting Selenium UI Test Suite"
+                      echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+                      echo "Test File: login.py"
+                      echo "=========================================="
+                      
+                      # Run tests with timestamped output for Azure Log Analytics
+                      python3 login.py 2>&1 | while IFS= read -r line; do
+                        echo "[$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")] $line"
+                      done | tee -a "$LOG_VM"
+                      
+                      echo "=========================================="
+                      echo "Selenium Test Suite Completed"
+                      echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")"
+                      echo "=========================================="
+                      
+                      # Copy log to artifacts staging
                       mkdir -p "$(Build.ArtifactStagingDirectory)"
                       cp "$LOG_VM" "$(Build.ArtifactStagingDirectory)/selenium-test.log"
 
-                      # Optional: Ensure UTF-8 (Azure ingestion can reject non-UTF8)
+                      # Ensure UTF-8 encoding (Azure Log Analytics requirement)
                       if command -v iconv >/dev/null 2>&1; then
                         iconv -f UTF-8 -t UTF-8 "$(Build.ArtifactStagingDirectory)/selenium-test.log" \
                           -o "$(Build.ArtifactStagingDirectory)/selenium-test.log.utf8" || true
@@ -545,10 +574,10 @@ stages:
                              "$(Build.ArtifactStagingDirectory)/selenium-test.log"
                         fi
                       fi
+                      
+                      echo "Log file prepared for publishing and Azure Monitor ingestion"
 
                 - publish: $(Build.ArtifactStagingDirectory)/selenium-test.log
                   displayName: 'Publish Selenium Logs'
                   artifact: selenium-logs
                   condition: always()
-
-

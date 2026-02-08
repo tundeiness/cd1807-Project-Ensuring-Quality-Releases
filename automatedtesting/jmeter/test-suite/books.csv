@@ -1,0 +1,11 @@
+id,title,description,pageCount,excerpt,publishDate
+1,Book 1,Description for Book 1,100,Excerpt from Book 1,2024-01-15T00:00:00.000Z
+2,Book 2,Description for Book 2,200,Excerpt from Book 2,2024-02-20T00:00:00.000Z
+3,Book 3,Description for Book 3,150,Excerpt from Book 3,2024-03-10T00:00:00.000Z
+4,Book 4,Description for Book 4,300,Excerpt from Book 4,2024-04-25T00:00:00.000Z
+5,Book 5,Description for Book 5,250,Excerpt from Book 5,2024-05-30T00:00:00.000Z
+6,Book 6,Description for Book 6,180,Excerpt from Book 6,2024-06-15T00:00:00.000Z
+7,Book 7,Description for Book 7,220,Excerpt from Book 7,2024-07-08T00:00:00.000Z
+8,Book 8,Description for Book 8,190,Excerpt from Book 8,2024-08-12T00:00:00.000Z
+9,Book 9,Description for Book 9,280,Excerpt from Book 9,2024-09-05T00:00:00.000Z
+10,Book 10,Description for Book 10,320,Excerpt from Book 10,2024-10-20T00:00:00.000Z

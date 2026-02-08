@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.5">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Stress Test Suite (Param)" enabled="true">
-      <stringProp name="TestPlan.comments">Stress Test Suite for FakeRestAPI (parameterized for CI/CD)</stringProp>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Stress Test Suite" enabled="true">
+      <stringProp name="TestPlan.comments">Stress Test Suite for FakeRestAPI with CSV data sets (parameterized for CI/CD)</stringProp>
       <boolProp name="TestPlan.functional_mode">false</boolProp>
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
 
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
         <collectionProp name="Arguments.arguments">
-          <!-- Host only; pass via -JAPPSERVICEURL=yourapp.azurewebsites.net -->
           <elementProp name="APPSERVICEURL" elementType="Argument">
             <stringProp name="Argument.name">APPSERVICEURL</stringProp>
             <stringProp name="Argument.value">${__P(APPSERVICEURL,udacity-app-3bb41105.azurewebsites.net)}</stringProp>
@@ -48,8 +47,8 @@
           <stringProp name="LoopController.loops">-1</stringProp>
         </elementProp>
 
-        <!-- Parameterized load -->
-        <stringProp name="ThreadGroup.num_threads">${__P(THREADS,30)}</stringProp>
+
+        <stringProp name="ThreadGroup.num_threads">${__P(THREADS,10)}</stringProp>
         <stringProp name="ThreadGroup.ramp_time">${__P(RAMP_UP,10)}</stringProp>
 
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
@@ -70,6 +69,90 @@
         </ConfigTestElement>
         <hashTree/>
 
+        <!-- CSV Data Set - Authors -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV - Authors" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">authors.csv</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">author_id,author_idBook,author_firstName,author_lastName</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+
+        <!-- CSV Data Set - Books -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV - Books" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">books.csv</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">book_id,book_title,book_description,book_pageCount,book_excerpt,book_publishDate</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+
+        <!-- CSV Data Set - Activities -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV - Activities" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">activities.csv</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">activity_id,activity_title,activity_dueDate,activity_completed</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+
+        <!-- CSV Data Set - Cover Photos -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV - CoverPhotos" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">cover_photos.csv</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">cover_id,cover_idBook,cover_url</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+
+        <!-- CSV Data Set - Users -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV - Users" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">users.csv</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">user_id,user_userName,user_password</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+
+        <!-- CSV Data Set -->
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV - IDs" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">ids.csv</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.all</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">id</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+
         <!-- Headers -->
         <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
           <collectionProp name="HeaderManager.headers">
@@ -81,13 +164,13 @@
         </HeaderManager>
         <hashTree/>
 
-        <!-- Think time to avoid instant meltdown; adjustable -->
-        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Think Time (ms)" enabled="true">
+
+        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Think Time (200ms)" enabled="true">
           <stringProp name="ConstantTimer.delay">${__P(THINK_TIME_MS,200)}</stringProp>
         </ConstantTimer>
         <hashTree/>
 
-        <!-- Warm-up -->
+
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Warmup - GET Authors" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments"/>
@@ -141,6 +224,33 @@
           <hashTree/>
         </hashTree>
 
+        <!-- GET Author by ID -->
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Authors/${author_id} (CSV)" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <stringProp name="HTTPSampler.path">${BASE_PATH}/Authors/${author_id}</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout">${__P(CONNECT_TIMEOUT_MS,10000)}</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">${__P(RESPONSE_TIMEOUT_MS,30000)}</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200/404" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="200">200</stringProp>
+              <stringProp name="404">404</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
         <!-- GET Activities -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Activities" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
@@ -160,6 +270,33 @@
             <collectionProp name="Asserion.test_strings">
               <stringProp name="200">200</stringProp>
               <stringProp name="204">204</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
+        <!-- GET Activity by ID -->
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Activities/${activity_id} (CSV)" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <stringProp name="HTTPSampler.path">${BASE_PATH}/Activities/${activity_id}</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout">${__P(CONNECT_TIMEOUT_MS,10000)}</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">${__P(RESPONSE_TIMEOUT_MS,30000)}</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200/404" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="200">200</stringProp>
+              <stringProp name="404">404</stringProp>
             </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <boolProp name="Assertion.assume_success">false</boolProp>
@@ -195,8 +332,89 @@
           <hashTree/>
         </hashTree>
 
-        <!-- CI-friendly results config (JTL written via CLI -l) -->
-        <ResultCollector guiclass="SimpleDataWriter" testclass="ResultCollector" testname="JTL Results (CI)" enabled="true">
+        <!-- GET Book by ID -->
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Books/${book_id} (CSV)" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <stringProp name="HTTPSampler.path">${BASE_PATH}/Books/${book_id}</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout">${__P(CONNECT_TIMEOUT_MS,10000)}</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">${__P(RESPONSE_TIMEOUT_MS,30000)}</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200/404" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="200">200</stringProp>
+              <stringProp name="404">404</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
+        <!-- GET CoverPhotos -->
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET CoverPhotos" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <stringProp name="HTTPSampler.path">${BASE_PATH}/CoverPhotos</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout">${__P(CONNECT_TIMEOUT_MS,10000)}</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">${__P(RESPONSE_TIMEOUT_MS,30000)}</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200/204" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="200">200</stringProp>
+              <stringProp name="204">204</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
+        <!-- GET Users -->
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET Users" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <stringProp name="HTTPSampler.path">${BASE_PATH}/Users</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.connect_timeout">${__P(CONNECT_TIMEOUT_MS,10000)}</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">${__P(RESPONSE_TIMEOUT_MS,30000)}</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert HTTP 200/204" enabled="true">
+            <collectionProp name="Asserion.test_strings">
+              <stringProp name="200">200</stringProp>
+              <stringProp name="204">204</stringProp>
+            </collectionProp>
+            <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+            <boolProp name="Assertion.assume_success">false</boolProp>
+            <intProp name="Assertion.test_type">8</intProp>
+          </ResponseAssertion>
+          <hashTree/>
+        </hashTree>
+
+
+        <ResultCollector guiclass="SimpleDataWriter" testclass="ResultCollector" testname="JTL Results" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>

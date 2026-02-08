@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Selenium UI Test Suite for SauceDemo
-Comprehensive test that adds all products to cart and removes them
+Comprehensive test that adds 6 products to cart and removes them
 """
 
 from selenium import webdriver
@@ -43,6 +43,7 @@ class SauceDemoTest:
         self.base_url = "https://www.saucedemo.com/"
         self.username = "standard_user"
         self.password = "secret_sauce"
+        self.required_item_count = 6  # Explicitly require 6 items as per rubric
         
     def login(self):
         """Test user login functionality"""
@@ -55,7 +56,7 @@ class SauceDemoTest:
             self.driver.get(self.base_url)
             print("✓ Page loaded successfully")
             
-            print(f"Attempting to log in as user: {self.username}")
+            print(f"\n>>> Logging in with user: '{self.username}' <<<")
             
             # Find and fill username field
             username_field = self.driver.find_element(By.ID, "user-name")
@@ -74,7 +75,7 @@ class SauceDemoTest:
             
             # Wait for inventory page to load
             self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, "inventory_list")))
-            print(f"✓ Login successful for user: {self.username}")
+            print(f"\n>>> SUCCESS: User '{self.username}' logged in successfully <<<")
             print("✓ Redirected to inventory page")
             
             return True
@@ -84,9 +85,9 @@ class SauceDemoTest:
             return False
     
     def add_all_products_to_cart(self):
-        """Add all products to the shopping cart"""
+        """Add exactly 6 products to the shopping cart (as required by project rubric)"""
         print("\n" + "-" * 80)
-        print("TEST 2: Add All Products to Cart")
+        print("TEST 2: Add 6 Products to Cart")
         print("-" * 80)
         
         try:
@@ -96,10 +97,22 @@ class SauceDemoTest:
             
             print(f"Found {product_count} products on the page")
             
+            # Verify we have at least 6 products
+            if product_count < self.required_item_count:
+                raise Exception(f"Expected at least {self.required_item_count} products, found only {product_count}")
+            
+            print(f"Requirement: Add {self.required_item_count} items to cart")
+            print("\n>>> ADDING ITEMS TO CART <<<")
+            
             # Get product names and add to cart
             added_products = []
             
-            for i, item in enumerate(inventory_items, 1):
+            # Add exactly 6 items (or all if there are exactly 6)
+            items_to_add = min(self.required_item_count, product_count)
+            
+            for i in range(items_to_add):
+                item = inventory_items[i]
+                
                 # Get product name
                 product_name = item.find_element(By.CLASS_NAME, "inventory_item_name").text
                 
@@ -108,19 +121,19 @@ class SauceDemoTest:
                 add_button.click()
                 
                 added_products.append(product_name)
-                print(f"✓ Added to cart [{i}/{product_count}]: {product_name}")
+                print(f"  [{i+1}/{items_to_add}] ADDED to cart: {product_name}")
                 time.sleep(0.3)  # Small delay for stability
             
             # Verify cart badge count
             cart_badge = self.driver.find_element(By.CLASS_NAME, "shopping_cart_badge")
             cart_count = int(cart_badge.text)
             
-            print(f"\n✓ All products added to cart successfully")
-            print(f"✓ Cart contains {cart_count} items")
+            print(f"\n>>> All {items_to_add} products added to cart successfully <<<")
+            print(f"✓ Cart badge shows {cart_count} items")
             
-            # Assertion to verify cart count matches product count
-            assert cart_count == product_count, f"Cart count mismatch: Expected {product_count}, Got {cart_count}"
-            print(f"✓ ASSERTION PASSED: Cart count matches product count ({cart_count}/{product_count})")
+            # Assertion to verify cart count
+            assert cart_count == items_to_add, f"Cart count mismatch: Expected {items_to_add}, Got {cart_count}"
+            print(f"✓ ASSERTION PASSED: Cart count matches expected count ({cart_count}/{items_to_add})")
             
             return True
                 
@@ -152,7 +165,7 @@ class SauceDemoTest:
             print(f"✓ Cart contains {len(cart_items)} items")
             
             # List all items in cart
-            print("\nItems in cart:")
+            print("\n>>> ITEMS CURRENTLY IN CART <<<")
             for i, item in enumerate(cart_items, 1):
                 item_name = item.find_element(By.CLASS_NAME, "inventory_item_name").text
                 print(f"  [{i}] {item_name}")
@@ -175,6 +188,7 @@ class SauceDemoTest:
             initial_count = len(cart_items)
             
             print(f"Starting with {initial_count} items in cart")
+            print(f"\n>>> REMOVING ITEMS FROM CART <<<")
             
             # Get product names before removal
             product_names = []
@@ -189,7 +203,7 @@ class SauceDemoTest:
                 
                 if remove_buttons:
                     remove_buttons[0].click()  # Always click the first remove button
-                    print(f"✓ Removed from cart [{i}/{initial_count}]: {product_name}")
+                    print(f"  [{i}/{initial_count}] REMOVED from cart: {product_name}")
                     time.sleep(0.3)  # Small delay for stability
             
             # Verify cart is empty
@@ -197,8 +211,8 @@ class SauceDemoTest:
             cart_items = self.driver.find_elements(By.CLASS_NAME, "cart_item")
             
             if len(cart_items) == 0:
-                print(f"\n✓ All products removed from cart successfully")
-                print(f"✓ Cart is now empty")
+                print(f"\n>>> All {initial_count} products removed from cart successfully <<<")
+                print(f"✓ Cart is now empty (0 items)")
                 print("✓ ASSERTION PASSED: Cart is empty")
                 return True
             else:
@@ -240,7 +254,7 @@ class SauceDemoTest:
             
             # Verify we're back on login page
             self.wait.until(EC.presence_of_element_located((By.ID, "login-button")))
-            print(f"✓ Logout successful for user: {self.username}")
+            print(f"\n>>> SUCCESS: User '{self.username}' logged out successfully <<<")
             print("✓ Redirected to login page")
             
             return True
